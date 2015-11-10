@@ -1,14 +1,12 @@
 package com.company;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
  * Class create blocked structure in file.
  *
- * To create new structured file you should use static method 'createStructuredFile'.
+ * To create new structured file you should use static method 'createStructuredFileBlock'.
  * Arguments are given: name of the new file, array of block positions, end of file.
  *
  * To use existed structured file, create the instance using constructor.
@@ -18,23 +16,24 @@ import java.io.RandomAccessFile;
  *      int getCountOfBlocks()
  *      long getBlockBeginPosition(int blockNumber)
  *      long getBlockEndPosition(int blockNumber)
- *      long getEndOfFile()
+ *      long getEndPosition()
  */
-public class StructuredFile {
+public class StructuredFileBlock {
 
     private static final String SPLITTER = " ";
     private static final String HEADER_END = "\n";
 
     /**
      *
-     * @param fileName
+     * @param raf
+     * @param startBlockPosition
+     * @param endBlockPosition
      * @param blocksPositions
-     * @param endOfFile
      * @return
      * @throws IOException
      */
-    public static StructuredFile createStructuredFile(String fileName, long[] blocksPositions, long endOfFile) throws IOException {
-        if(fileName == null){
+    public static StructuredFileBlock createStructuredFileBlock(RandomAccessFile raf, long startBlockPosition, long endBlockPosition, long[] blocksPositions) throws IOException {
+        if(raf == null){
             throw new NullPointerException();
         }
         if(blocksPositions == null){
@@ -43,24 +42,33 @@ public class StructuredFile {
         if(blocksPositions.length == 0){
             throw new IllegalArgumentException("blocksPositions is empty");
         }
-        if(endOfFile < blocksPositions[blocksPositions.length - 1]){
-            throw new IllegalArgumentException("endOfFile must be greater then position of the last block");
+        if(startBlockPosition > endBlockPosition){
+            throw new IllegalArgumentException("startBlockPosition must be less then endBlockPosition");
         }
-        File file = new File(fileName);
-        if(file.exists()){
-            throw new IllegalStateException("file is already exist");
+        if(startBlockPosition > blocksPositions[0]){
+            throw new IllegalArgumentException("startBlockPosition must be less then position of the first block");
+        }
+        if(endBlockPosition < blocksPositions[blocksPositions.length - 1]){
+            throw new IllegalArgumentException("endBlockPosition must be greater then position of the last block");
         }
 
-        file.createNewFile();
+        long length = raf.length();
+        if(endBlockPosition > length){
+            throw new IllegalStateException("Size of file less then endBlock position");
+        }
 
-        RandomAccessFile raf = new RandomAccessFile(file, "rw");
+        raf.seek(startBlockPosition);
+
         long previousPosition = 0;
         for(int i = 0;i < blocksPositions.length;i++){
-
             if(previousPosition > blocksPositions[i]){
                 throw new IllegalArgumentException("positions must follow in increasing order");
             }
             previousPosition = blocksPositions[i];
+        }
+
+        for(int i = 0;i < blocksPositions.length;i++){
+
 
             String crtValue = String.valueOf(blocksPositions[i]);
             raf.write(crtValue.getBytes());
@@ -76,32 +84,25 @@ public class StructuredFile {
             }
         }
 
-        raf.setLength(endOfFile);
-
-        raf.close();
-
-        return new StructuredFile(file, blocksPositions);
+        return new StructuredFileBlock(raf, startBlockPosition, endBlockPosition, blocksPositions);
     }
 
-    private File file;
     private RandomAccessFile raf;
     private long[] blocksPositions;
-    private long endOfFile;
+    private long startPosition;
+    private long endPosition;
 
-    private StructuredFile(File file, long[] blocksPositions) throws IOException {
-        this.file = file;
+    private StructuredFileBlock(RandomAccessFile raf, long startPosition,long endPosition, long[] blocksPositions) throws IOException {
         this.blocksPositions = blocksPositions;
-        this.raf = new RandomAccessFile(file, "rw");
-        this.endOfFile = raf.length();
+        this.raf = raf;
+        this.startPosition = startPosition;
+        this.endPosition = endPosition;
     }
 
-    StructuredFile(String fileName) throws IOException {
-        file = new File(fileName);
-        if(!file.exists()){
-            throw new FileNotFoundException();
-        }
+    StructuredFileBlock(RandomAccessFile raf, long startPosition,long endPosition) throws IOException {
+        this.raf = raf;
+        this.raf.seek(startPosition);
 
-        this.raf = new RandomAccessFile(fileName,"rw");
         String header = raf.readLine();
         String[] stringBlocksPositions = header.split(String.valueOf(SPLITTER));
         blocksPositions = new long[stringBlocksPositions.length];
@@ -117,7 +118,8 @@ public class StructuredFile {
             throw new IllegalStateException("there is no blocks in this file");
         }
 
-        endOfFile = raf.length();
+        this.startPosition = startPosition;
+        this.endPosition = endPosition;
     }
 
     /**
@@ -152,12 +154,17 @@ public class StructuredFile {
         }
 
         if(blockNumber == this.blocksPositions.length - 1){
-            return endOfFile;
+            return endPosition;
         }
         return blocksPositions[blockNumber + 1];
     }
 
-    public long getEndOfFile(){
-        return endOfFile;
+
+    public long getStartPosition() {
+        return startPosition;
+    }
+
+    public long getEndPosition(){
+        return endPosition;
     }
 }
