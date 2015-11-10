@@ -16,7 +16,7 @@ import java.io.RandomAccessFile;
  *
  * public methods:
  *      int getCountOfBlocks()
- *      long getBlockPosition(int blockNumber)
+ *      long getBlockBeginPosition(int blockNumber)
  *      long getBlockEndPosition(int blockNumber)
  *      long getEndOfFile()
  */
@@ -25,6 +25,14 @@ public class StructuredFile {
     private static final String SPLITTER = " ";
     private static final String HEADER_END = "\n";
 
+    /**
+     *
+     * @param fileName
+     * @param blocksPositions
+     * @param endOfFile
+     * @return
+     * @throws IOException
+     */
     public static StructuredFile createStructuredFile(String fileName, long[] blocksPositions, long endOfFile) throws IOException {
         if(fileName == null){
             throw new NullPointerException();
@@ -112,11 +120,20 @@ public class StructuredFile {
         endOfFile = raf.length();
     }
 
+    /**
+     *
+     * @return
+     */
     public int getCountOfBlocks(){
         return blocksPositions.length;
     }
 
-    public long getBlockPosition(int blockNumber){
+    /**
+     *
+     * @param blockNumber
+     * @return
+     */
+    public long getBlockBeginPosition(int blockNumber){
         if(blockNumber < 0 || blockNumber > this.blocksPositions.length - 1){
             throw new IndexOutOfBoundsException("there is no block with this order number");
         }
@@ -124,6 +141,11 @@ public class StructuredFile {
         return blocksPositions[blockNumber];
     }
 
+    /**
+     *
+     * @param blockNumber
+     * @return
+     */
     public long getBlockEndPosition(int blockNumber){
         if(blockNumber < 0 || blockNumber > this.blocksPositions.length - 1){
             throw new IndexOutOfBoundsException("there is no block with this order number");
