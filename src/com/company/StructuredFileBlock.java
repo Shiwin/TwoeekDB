@@ -42,6 +42,9 @@ public class StructuredFileBlock {
         if(blocksPositions.length == 0){
             throw new IllegalArgumentException("blocksPositions is empty");
         }
+        if(raf.length() == 0){
+            throw new IllegalArgumentException("length of file must be greate then 0");
+        }
         if(startBlockPosition > endBlockPosition){
             throw new IllegalArgumentException("startBlockPosition must be less then endBlockPosition");
         }
@@ -50,11 +53,6 @@ public class StructuredFileBlock {
         }
         if(endBlockPosition < blocksPositions[blocksPositions.length - 1]){
             throw new IllegalArgumentException("endBlockPosition must be greater then position of the last block");
-        }
-
-        long length = raf.length();
-        if(endBlockPosition > length){
-            throw new IllegalStateException("Size of file less then endBlock position");
         }
 
         raf.seek(startBlockPosition);
