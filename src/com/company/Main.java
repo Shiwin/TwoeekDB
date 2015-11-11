@@ -1,41 +1,54 @@
 package com.company;
 
+import com.company.file_access.StructureHandler;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class Main {
 
     public static void main(String[] args) {
-        String fileName = "test.txt";
+        String fileName = "test.ts";
         File file = new File(fileName);
-
-        StructuredFileBlock fileBlocks = null;
         RandomAccessFile raf;
-        long[] blocksPositions = new long[]{100,1000,3000,7000,10000};
+
+        long[][] sizes = new long[2][4];
+        sizes[0][0] = 1000;
+        sizes[0][1] = 3100;
+        sizes[0][2] = 3200;
+        sizes[0][3] = 2300;
+
+        sizes[1][0] = 3000;
+        sizes[1][1] = 3100;
+        sizes[1][2] = 4200;
+        sizes[1][3] = 1300;
+
+
+
+        StructureHandler handler = null;
         try {
             if (file.exists()) {
                 raf = new RandomAccessFile(file, "rw");
-
-                long[] lastSubBlocks = new long[]{10200, 12600};
-
-                //fileBlocks = new StructuredFileBlock(raf,10000, 15000);
-                fileBlocks = StructuredFileBlock.createStructuredFileBlock(raf, 10000, 15000, lastSubBlocks);
-            }else {
-                file.createNewFile();
+                handler = new StructureHandler(raf);
+            } else {
                 raf = new RandomAccessFile(file, "rw");
-                raf.setLength(15000);
-
-                fileBlocks = StructuredFileBlock.createStructuredFileBlock(raf, 0, raf.length(), blocksPositions);
+                handler = StructureHandler.createStructureHandler(raf,sizes);
             }
-        }catch (Exception e){
-            System.out.println(e.getMessage());
+        }catch (IOException e){
+            System.out.println("lol1");
         }
 
-        if(fileBlocks == null){
-            System.out.println("lol");
+        if(handler == null){
+            System.out.println("lol2");
             return;
         }
 
-        System.out.println(fileBlocks.getCountOfBlocks());
+        for (int i = 0; i < handler.countOfTables(); i++) {
+            System.out.println(handler.getTableSize(i));
+        }
+        System.out.println();
+        for (int i = 0; i < handler.countOfIndeces(); i++) {
+            System.out.println(handler.getIndexSize(i));
+        }
     }
 }
