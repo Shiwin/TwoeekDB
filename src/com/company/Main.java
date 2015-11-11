@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 public class Main {
 
     public static void main(String[] args) {
-        String fileName = "test.ts";
+        String fileName = "test.txt";
         File file = new File(fileName);
 
         StructuredFileBlock fileBlocks = null;
@@ -16,10 +16,10 @@ public class Main {
             if (file.exists()) {
                 raf = new RandomAccessFile(file, "rw");
 
-                long[] firstSubBlocks = new long[]{10200, 12600};
+                long[] lastSubBlocks = new long[]{10200, 12600};
 
-                fileBlocks = new StructuredFileBlock(raf,10000, 15000);
-                //fileBlocks = StructuredFileBlock.createStructuredFileBlock(raf, 10000, 15000, firstSubBlocks);
+                //fileBlocks = new StructuredFileBlock(raf,10000, 15000);
+                fileBlocks = StructuredFileBlock.createStructuredFileBlock(raf, 10000, 15000, lastSubBlocks);
             }else {
                 file.createNewFile();
                 raf = new RandomAccessFile(file, "rw");
