@@ -1,9 +1,9 @@
 package com.company;
 
+import com.company.file_access.StructureHandler;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Arrays;
 
 public class Main {
 
@@ -23,24 +23,32 @@ public class Main {
         sizes[1][2] = 4200;
         sizes[1][3] = 1300;
 
-        WrapFile wrap = null;
+
+
+        StructureHandler handler = null;
         try {
             if (file.exists()) {
                 raf = new RandomAccessFile(file, "rw");
-                wrap = new WrapFile(raf);
+                handler = new StructureHandler(raf);
             } else {
                 raf = new RandomAccessFile(file, "rw");
-                wrap = WrapFile.createWrapFile(raf,sizes);
+                handler = StructureHandler.createStructureHandler(raf,sizes);
             }
         }catch (IOException e){
             System.out.println("lol1");
         }
 
-        if(wrap == null){
+        if(handler == null){
             System.out.println("lol2");
             return;
         }
 
-        System.out.println(Arrays.toString(wrap.getTableStartEnd(2)));
+        for (int i = 0; i < handler.countOfTables(); i++) {
+            System.out.println(handler.getTableSize(i));
+        }
+        System.out.println();
+        for (int i = 0; i < handler.countOfIndeces(); i++) {
+            System.out.println(handler.getIndexSize(i));
+        }
     }
 }
