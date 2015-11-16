@@ -1,8 +1,6 @@
 package com.company;
 
-import com.company.file_access.StructureHandler;
 import java.io.File;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class Main {
@@ -23,32 +21,8 @@ public class Main {
         sizes[1][2] = 4200;
         sizes[1][3] = 1300;
 
+        SimpleDB db = new SimpleDB(fileName);
 
 
-        StructureHandler handler = null;
-        try {
-            if (file.exists()) {
-                raf = new RandomAccessFile(file, "rw");
-                handler = new StructureHandler(raf);
-            } else {
-                raf = new RandomAccessFile(file, "rw");
-                handler = StructureHandler.createStructureHandler(raf,sizes);
-            }
-        }catch (IOException e){
-            System.out.println("lol1");
-        }
-
-        if(handler == null){
-            System.out.println("lol2");
-            return;
-        }
-
-        for (int i = 0; i < handler.countOfTables(); i++) {
-            System.out.println(handler.getTableSize(i));
-        }
-        System.out.println();
-        for (int i = 0; i < handler.countOfIndeces(); i++) {
-            System.out.println(handler.getIndexSize(i));
-        }
     }
 }
