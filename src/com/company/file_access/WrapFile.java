@@ -64,53 +64,45 @@ public class WrapFile {
         this.raf = raf;
     }
 
-    protected long[] getBlockStartEndPositions(int blockNumber) {
+    protected long[] getBlockStartEndPositions(int blockNumber) throws IOException {
 
         long length = 0;
         long[] startEnd = new long[2];
-        try {
-            length = raf.length();
-            StructuredFileBlock sfb = new StructuredFileBlock(raf, 0, length);
-            if (blockNumber > sfb.getCountOfBlocks()) {
-                throw new IllegalArgumentException("No such blockNumber: " + blockNumber);
-            }
-            startEnd[0] = sfb.getBlockBeginPosition(blockNumber);
-            startEnd[1] = sfb.getBlockEndPosition(blockNumber);
-        } catch (IOException e) {
-            System.out.println("Wrong initialization of RandomAccessFile"); // TODO add logger
+        length = raf.length();
+        StructuredFileBlock sfb = new StructuredFileBlock(raf, 0, length);
+        if (blockNumber > sfb.getCountOfBlocks()) {
+            throw new IllegalArgumentException("No such blockNumber: " + blockNumber);
         }
+        startEnd[0] = sfb.getBlockBeginPosition(blockNumber);
+        startEnd[1] = sfb.getBlockEndPosition(blockNumber);
         return startEnd;
     }
 
-    protected long[] getSubBlockStartEndPosition(int blockNumber, int subBlockNumber) {
+    protected long[] getSubBlockStartEndPosition(int blockNumber, int subBlockNumber) throws IOException {
         long[] startEnd = new long[2];
         long length = 0;
-        try {
-            length = raf.length();
-            StructuredFileBlock sfb = new StructuredFileBlock(raf, 0, length);
-            if (blockNumber > sfb.getCountOfBlocks()) {
-                throw new IllegalArgumentException("No such blockNumber: " + blockNumber);
-            }
-            StructuredFileBlock tabSfb = new StructuredFileBlock(raf, sfb.getBlockBeginPosition(blockNumber), sfb.getBlockEndPosition(blockNumber));
-
-            if (subBlockNumber > tabSfb.getCountOfBlocks()) {
-                throw new IllegalArgumentException("No such subBlockNumber: " + subBlockNumber);
-            }
-            startEnd[0] = tabSfb.getBlockBeginPosition(subBlockNumber);
-            startEnd[1] = tabSfb.getBlockEndPosition(subBlockNumber);
-        } catch (IOException e) {
-            System.out.println("Wrong initialization of RandomAccessFile"); // TODO add logger
+        length = raf.length();
+        StructuredFileBlock sfb = new StructuredFileBlock(raf, 0, length);
+        if (blockNumber > sfb.getCountOfBlocks()) {
+            throw new IllegalArgumentException("No such blockNumber: " + blockNumber);
         }
+        StructuredFileBlock tabSfb = new StructuredFileBlock(raf, sfb.getBlockBeginPosition(blockNumber), sfb.getBlockEndPosition(blockNumber));
+
+        if (subBlockNumber > tabSfb.getCountOfBlocks()) {
+            throw new IllegalArgumentException("No such subBlockNumber: " + subBlockNumber);
+        }
+        startEnd[0] = tabSfb.getBlockBeginPosition(subBlockNumber);
+        startEnd[1] = tabSfb.getBlockEndPosition(subBlockNumber);
 
         return startEnd;
     }
 
-    protected long getBlockSize(int blockNumber) {
+    protected long getBlockSize(int blockNumber) throws IOException {
         long[] startEnd = getBlockStartEndPositions(blockNumber);
         return startEnd[1] - startEnd[0];
     }
 
-    protected long getSubBlockSize(int blockNumber, int subBlockNumber) {
+    protected long getSubBlockSize(int blockNumber, int subBlockNumber) throws IOException {
         long[] startEnd = getSubBlockStartEndPosition(blockNumber, subBlockNumber);
         return startEnd[1] - startEnd[0];
     }

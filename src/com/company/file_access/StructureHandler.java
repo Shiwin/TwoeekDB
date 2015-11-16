@@ -13,35 +13,35 @@ public class StructureHandler extends WrapFile {
         super(raf);
     }
 
-    public long[] getTablesBlockStartEndPositions(){
+    public long[] getTablesBlockStartEndPositions() throws IOException {
         return getBlockStartEndPositions(0);
     }
 
-    public long[] getIndecesBlockStartEndPositions(){
+    public long[] getIndecesBlockStartEndPositions() throws IOException {
         return getBlockStartEndPositions(1);
     }
 
-    public long[] getTableStartEnd(int tableNumber){
+    public long[] getTableStartEnd(int tableNumber) throws IOException {
         return getSubBlockStartEndPosition(0, tableNumber);
     }
 
-    public long[] getIndexStartEnd(int indexNumber){
+    public long[] getIndexStartEnd(int indexNumber) throws IOException {
         return getSubBlockStartEndPosition(1, indexNumber);
     }
 
-    public long getTablesBlockSize(){
+    public long getTablesBlockSize() throws IOException {
         return getBlockSize(0);
     }
 
-    public long getIndecesBlockSize(){
+    public long getIndecesBlockSize() throws IOException {
         return getBlockSize(1);
     }
 
-    public long getTableSize(int tableNumber){
+    public long getTableSize(int tableNumber) throws IOException {
         return getSubBlockSize(0, tableNumber);
     }
 
-    public long getIndexSize(int indexNumber){
+    public long getIndexSize(int indexNumber) throws IOException {
         return getSubBlockSize(1, indexNumber);
     }
 
