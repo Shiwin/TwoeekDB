@@ -5,7 +5,7 @@ package com.company;
  */
 public class Logger {
 
-    public static void message(String text){
+    public void message(String text){
         System.out.println(text);
     }
 
