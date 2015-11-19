@@ -3,9 +3,6 @@ package com.company;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-/**
- * Created by Сергей on 18.11.2015.
- */
 public class TableAccess {
 
     private static final String SPLITTER = " ";
@@ -238,7 +235,7 @@ public class TableAccess {
         return sb.toString();
     }
 
-    private String getColumnValue(int recordNumber, int colNumber) throws IOException {
+    public String getColumnValue(int recordNumber, int colNumber) throws IOException {
         if(colNumber < 0 || colNumber > this.colNames.length){
             throw new IndexOutOfBoundsException("Wrong column number");
         }
@@ -257,5 +254,25 @@ public class TableAccess {
 
     public int getTableSize(){
         return tableSize;
+    }
+
+    public int getCountOfColumn(){
+        return this.colNames.length;
+    }
+
+    public String getColumnName(int columnNumber){
+        if(columnNumber < 0 || columnNumber > colSize.length){
+            throw new IndexOutOfBoundsException("ColumnNumber out of bounds");
+        }
+
+        return this.colNames[columnNumber];
+    }
+
+    public int getColumnSize(int columnNumber){
+        if(columnNumber < 0 || columnNumber > colSize.length){
+            throw new IndexOutOfBoundsException("ColumnNumber out of bounds");
+        }
+
+        return this.colSize[columnNumber];
     }
 }

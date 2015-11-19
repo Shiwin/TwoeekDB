@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
 
 public class SimpleDB {
 
@@ -61,10 +62,13 @@ public class SimpleDB {
         return new SimpleDB(dbFile, raf, structure);
     }
 
+    //-----------------------------------------------------------------------------------
+
     private File dbFile;
     private RandomAccessFile raf;
     private StructureHandler structure;
-    private TableAccess tableAccessor;
+    private Table crtTable;
+    private HashMap<String, Integer> tableNames;
     private boolean ready;
 
     private SimpleDB(File file, RandomAccessFile raf, StructureHandler structure){
@@ -72,6 +76,7 @@ public class SimpleDB {
         this.dbFile = file;
         this.raf = raf;
         this.structure = structure;
+        this.crtTable = null;
         ready = true;
     }
 
@@ -91,7 +96,7 @@ public class SimpleDB {
             return;
         }
         this.structure = new StructureHandler(raf);
-        this.tableAccessor = null;
+        this.crtTable = null;
         ready = true;
     }
 
@@ -113,14 +118,15 @@ public class SimpleDB {
             return;
         }
         try {
-            this.tableAccessor = TableAccess.createTableAccess(raf,startEnd[0], startEnd[1], tableName, colNames, colSizes);
+            TableAccess accessor = TableAccess.createTableAccess(raf,startEnd[0], startEnd[1], tableName, colNames, colSizes);
+            crtTable = new Table(accessor);
         } catch (IOException e) {
             dbLogger.message(e.getMessage());
             return;
         }
     }
 
-    private TableAccess getAccessor(int tableNumber){
+    public Table getTable(int tableNumber){
         if(!isReady()){
             throw new IllegalStateException("Database isn't created");
         }
@@ -135,7 +141,7 @@ public class SimpleDB {
             return null;
         }
         try {
-            return new TableAccess(raf, startEnd[0], startEnd[1]);
+            return new Table(new TableAccess(raf, startEnd[0], startEnd[1]));
         } catch (IOException e) {
             dbLogger.message(e.getMessage());
             return null;
@@ -145,32 +151,12 @@ public class SimpleDB {
         }
     }
 
-    public String getTableName(int tableNumber){
-        this.tableAccessor = getAccessor(tableNumber);
-        if(this.tableAccessor == null){
-            dbLogger.message("tableAccessor isn't initialized. Can't get table name");
-            return null;
-        }
-
-        return tableAccessor.getTableName();
-    }
-
-    public int getTableSize(int tableNumber){
-        this.tableAccessor = getAccessor(tableNumber);
-        if(this.tableAccessor == null){
-            dbLogger.message("tableAccessor isn't initialized. Can't get table size");
-            return -1;
-        }
-
-        return tableAccessor.getTableSize();
-    }
-
     public int getTablesCount(){
         return this.structure.countOfTables();
     }
 
     //test
-    public void addRecord(int tableNumber, String[] values){
+    /*public void addRecord(int tableNumber, String[] values){
         this.tableAccessor = getAccessor(tableNumber);
         if(this.tableAccessor == null){
             dbLogger.message("tableAccessor isn't initialized. Can't add record");
@@ -197,7 +183,7 @@ public class SimpleDB {
             dbLogger.message(e.getMessage());
         }
         return null;
-    }
+    }*/
     //
 
     public boolean isReady(){
