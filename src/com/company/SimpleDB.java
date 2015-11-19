@@ -96,6 +96,9 @@ public class SimpleDB {
             return;
         }
         this.structure = new StructureHandler(raf);
+        this.tableNames = new HashMap<>();
+        getTableNames();
+
         this.crtTable = null;
         ready = true;
     }
@@ -126,6 +129,27 @@ public class SimpleDB {
         }
     }
 
+    private void getTableNames(){
+        int count = getTablesCount();
+        for(int i = 0; i < count;i++){
+            TableAccess accessor = null;
+            long[] startEnd = new long[0];
+            try {
+                startEnd = structure.getTableStartEnd(i);
+            } catch (IOException e) {
+                dbLogger.message(e.getMessage());
+            }
+            try {
+                accessor = new TableAccess(raf, startEnd[0],startEnd[1]);
+            } catch (Exception e) {
+                // skip uninitialized table
+            }
+            if(accessor != null){
+                tableNames.put(accessor.getTableName(), i);
+            }
+        }
+    }
+
     public Table getTable(int tableNumber){
         if(!isReady()){
             throw new IllegalStateException("Database isn't created");
@@ -151,40 +175,18 @@ public class SimpleDB {
         }
     }
 
+    public Table getTable(String tableName){
+        Integer tableNumber = this.tableNames.get(tableName);
+        if(tableNumber != null) {
+            return getTable(tableNumber);
+        }else{
+            return null;
+        }
+    }
+
     public int getTablesCount(){
         return this.structure.countOfTables();
     }
-
-    //test
-    /*public void addRecord(int tableNumber, String[] values){
-        this.tableAccessor = getAccessor(tableNumber);
-        if(this.tableAccessor == null){
-            dbLogger.message("tableAccessor isn't initialized. Can't add record");
-            return;
-        }
-
-        try {
-            this.tableAccessor.addRecord(values);
-        } catch (IOException e) {
-            dbLogger.message(e.getMessage());
-        }
-    }
-
-    public String[] getRecord(int tableNumber, int recordNumber){
-        this.tableAccessor = getAccessor(tableNumber);
-        if(this.tableAccessor == null){
-            dbLogger.message("tableAccessor isn't initialized. Can't get record");
-            return null;
-        }
-
-        try {
-            return this.tableAccessor.getRecord(recordNumber);
-        } catch (IOException e) {
-            dbLogger.message(e.getMessage());
-        }
-        return null;
-    }*/
-    //
 
     public boolean isReady(){
         return ready;

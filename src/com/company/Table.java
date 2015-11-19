@@ -1,6 +1,7 @@
 package com.company;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 public class Table {
 
@@ -30,7 +31,7 @@ public class Table {
     }
 
     public int getCountOfColumns(){
-        return this.accessor.getCountOfColumn();
+        return this.accessor.getCountOfColumns();
     }
 
     public String[] findRecordLinear(int colNumber, String value) throws IOException {
@@ -42,5 +43,14 @@ public class Table {
             }
         }
         return result;
+    }
+
+    public String[] findRecordLinear(String columnName, String value)throws IOException{
+        HashMap<String, Integer> columns = accessor.getColNamesHash();
+        Integer colNumber = columns.get(columnName);
+        if(colNumber == null){
+            return null;
+        }
+        return findRecordLinear(colNumber, value);
     }
 }

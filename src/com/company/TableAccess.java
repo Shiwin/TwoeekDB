@@ -2,6 +2,7 @@ package com.company;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
 
 public class TableAccess {
 
@@ -50,6 +51,7 @@ public class TableAccess {
     private long dataStartPosition;
     private String tableName;
     private String[] colNames;
+    private HashMap<String, Integer> colNamesHash;
     private int[] colSize;
     private int tableSize;
 
@@ -59,7 +61,20 @@ public class TableAccess {
         this.dataStartPosition = dataStartPosition;
         this.tableName = tableName;
         this.colNames = colNames;
+        colNamesHash = initializeColNameHash(this.colNames);
+
         this.colSize = colSize;
+    }
+
+    private static HashMap<String, Integer> initializeColNameHash(String[] colNames){
+        if (colNames == null) {
+            return null;
+        }
+        HashMap<String, Integer> map = new HashMap<>();
+        for(int i = 0; i < colNames.length;i++){
+            map.put(colNames[i], i);
+        }
+        return map;
     }
 
     private static void updateHeaderInFile(RandomAccessFile raf, long startPosition, long endPosition, long dataStartPosition, String tableName, String[] colNames, int[] colSize, int size) throws IOException {
@@ -138,6 +153,7 @@ public class TableAccess {
         String header = raf.readLine();
         String[] info = header.split(SPLITTER);
         parseHeader(info);
+        colNamesHash = initializeColNameHash(this.colNames);
     }
 
     private int getFullRecordLength(){
@@ -207,6 +223,10 @@ public class TableAccess {
         return values;
     }
 
+    public HashMap<String, Integer> getColNamesHash(){
+        return colNamesHash;
+    }
+
     private void updateColumnValue(int recordNumber, int colNumber, String value) throws IOException {
         if(value.length() > this.colSize[colNumber]){
             throw new IllegalArgumentException("length of value is bigger then it is allowed");
@@ -256,7 +276,7 @@ public class TableAccess {
         return tableSize;
     }
 
-    public int getCountOfColumn(){
+    public int getCountOfColumns(){
         return this.colNames.length;
     }
 

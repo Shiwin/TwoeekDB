@@ -73,6 +73,11 @@ public class StructuredFileBlock {
             }
         }
 
+        for(int i = 0;i < blocksPositions.length;i++){
+            raf.seek(blocksPositions[i]);
+            raf.write("\n".getBytes());
+        }
+
         return new StructuredFileBlock(raf, startBlockPosition, endBlockPosition, blocksPositions);
     }
 
