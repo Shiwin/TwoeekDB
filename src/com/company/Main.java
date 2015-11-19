@@ -65,16 +65,26 @@ public class Main {
     public static String[][] generateArrayWithRecords(int numberOfRecords, int numberOfColumns, int[] colSizes){
         String[][] result = new String[numberOfRecords][numberOfColumns];
 
+        int uniqId = 0;
         for(int crtRec = 0;crtRec < numberOfRecords;crtRec++){
             if(crtRec < numberOfRecords - 1) {
                 for (int crtCol = 0; crtCol < numberOfColumns; crtCol++) {
-                    result[crtRec][crtCol] = randomString(colSizes[crtCol]);
+                    if(crtCol == 0){
+                        result[crtRec][crtCol] = String.valueOf(uniqId);
+                    }else {
+                        result[crtRec][crtCol] = randomString(colSizes[crtCol]);
+                    }
                 }
             }else{
                 for (int crtCol = 0; crtCol < numberOfColumns; crtCol++) {
-                    result[crtRec][crtCol] = "Hi";
+                    if(crtCol == 0) {
+                        result[crtRec][crtCol] = String.valueOf(uniqId);
+                    }else{
+                        result[crtRec][crtCol] = "Hi";
+                    }
                 }
             }
+            uniqId++;
         }
         return result;
     }
@@ -83,15 +93,15 @@ public class Main {
         String dbName = "test";
 
         long[][] sizes = new long[2][4];
-        sizes[0][0] = 1000000;
-        sizes[0][1] = 3100000;
-        sizes[0][2] = 3200000;
-        sizes[0][3] = 2300000;
+        sizes[0][0] = 20000;
+        sizes[0][1] = 31000;
+        sizes[0][2] = 32000;
+        sizes[0][3] = 23000;
 
-        sizes[1][0] = 3000000;
-        sizes[1][1] = 3100000;
-        sizes[1][2] = 4200000;
-        sizes[1][3] = 1300000;
+        sizes[1][0] = 30000;
+        sizes[1][1] = 31000;
+        sizes[1][2] = 42000;
+        sizes[1][3] = 13000;
 
         //SimpleDB db = SimpleDB.createDB(dbName, sizes);
         SimpleDB db = new SimpleDB(dbName);
@@ -100,23 +110,17 @@ public class Main {
         String tableName = "students";
         String[] columns = {"id", "name", "grade"};
         int[] colSizes = {100, 800, 20};
+        //db.initializeTable(0, tableName, columns, colSizes, 0);
 
         //table 2
         String tableName2 = "teachers";
         String[] columns2 = {"id", "name", "speciality"};
         int[] colSizes2 = {20, 600, 100};
-        //db.initializeTable(1, tableName2, columns2, colSizes2);
+        //db.initializeTable(1, tableName2, columns2, colSizes2, 0);
 
         Table table = db.getTable("students");
-
-        try {
-            System.out.println(Arrays.toString(table.findRecordLinear("name", "Hi")));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         //write test records
-/*        String[][] records = generateArrayWithRecords(1000, colSizes.length,colSizes);
+/*        String[][] records = generateArrayWithRecords(10, colSizes.length,colSizes);
 
         for(int i = 0;i < records.length;i++){
             try {
@@ -126,6 +130,14 @@ public class Main {
             }
         }*/
         //
+
+/*        try {
+            System.out.println(Arrays.toString(table.findRecordLinear("name", "Hi")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
+
+        System.out.println(table.getKeyColumn());
 
 //        try {
 //            generateFileWithRecords("recs", 100, colSizes.length, colSizes);

@@ -11,7 +11,7 @@ public class TableAccess {
 
     private static long headerSize = 1000;
 
-    public static TableAccess createTableAccess(RandomAccessFile raf, long startPosition, long endPosition, String tableName, String[] colNames, int[] colSize) throws IOException {
+    public static TableAccess createTableAccess(RandomAccessFile raf, long startPosition, long endPosition, String tableName, String[] colNames, int[] colSize, int keyColumn) throws IOException {
         if(raf == null){
             throw new NullPointerException("raf is null");
         }
@@ -38,11 +38,15 @@ public class TableAccess {
             throw new IllegalArgumentException("different tableSize of colNames and colSizes");
         }
 
+        if(keyColumn >= colNames.length){
+            throw new IllegalArgumentException("keyColumn must be less then number of columns");
+        }
+
         int colNumber = colNames.length;
 
-        updateHeaderInFile(raf, startPosition, endPosition, startPosition + headerSize, tableName, colNames, colSize, 0);
+        updateHeaderInFile(raf, startPosition, endPosition, tableName, colNames, colSize, keyColumn, 0);
 
-        return new TableAccess(raf, startPosition, endPosition, startPosition + headerSize, tableName, colNames, colSize);
+        return new TableAccess(raf, startPosition, endPosition, startPosition + headerSize, tableName, colNames, colSize, keyColumn);
     }
 
     private RandomAccessFile raf;
@@ -54,13 +58,15 @@ public class TableAccess {
     private HashMap<String, Integer> colNamesHash;
     private int[] colSize;
     private int tableSize;
+    private int keyColumn;
 
-    private TableAccess(RandomAccessFile raf, long startPosition, long endPosition, long dataStartPosition, String tableName, String[] colNames, int[] colSize){
+    private TableAccess(RandomAccessFile raf, long startPosition, long endPosition, long dataStartPosition, String tableName, String[] colNames, int[] colSize, int keyColumn){
         this.startPosition = startPosition;
         this.endPosition = endPosition;
         this.dataStartPosition = dataStartPosition;
         this.tableName = tableName;
         this.colNames = colNames;
+        this.keyColumn = keyColumn;
         colNamesHash = initializeColNameHash(this.colNames);
 
         this.colSize = colSize;
@@ -77,7 +83,7 @@ public class TableAccess {
         return map;
     }
 
-    private static void updateHeaderInFile(RandomAccessFile raf, long startPosition, long endPosition, long dataStartPosition, String tableName, String[] colNames, int[] colSize, int size) throws IOException {
+    private static void updateHeaderInFile(RandomAccessFile raf, long startPosition, long endPosition, String tableName, String[] colNames, int[] colSize, int keyColumn, int size) throws IOException {
         int colNumber = colNames.length;
         StringBuilder sb = new StringBuilder();
         sb.append(startPosition);
@@ -89,6 +95,8 @@ public class TableAccess {
         sb.append(tableName);
         sb.append(SPLITTER);
         sb.append(colNumber);
+        sb.append(SPLITTER);
+        sb.append(keyColumn);
         sb.append(SPLITTER);
         sb.append(size);
         sb.append(SPLITTER);
@@ -105,7 +113,7 @@ public class TableAccess {
         raf.write(sb.toString().getBytes());
     }
     private void updateHeaderInFile() throws IOException {
-        updateHeaderInFile(raf, startPosition, endPosition, dataStartPosition, tableName, colNames, colSize, tableSize);
+        updateHeaderInFile(raf, startPosition, endPosition, tableName, colNames, colSize, keyColumn, tableSize);
     }
 
     private void parseHeader(String[] info){
@@ -120,12 +128,13 @@ public class TableAccess {
             this.tableName = info[o + 3];
 
             int colNumber = Integer.parseInt(info[o + 4]);
-            this.tableSize = Integer.parseInt(info[o + 5]);
+            this.keyColumn = Integer.parseInt(info[o + 5]);
+            this.tableSize = Integer.parseInt(info[o + 6]);
 
             this.colNames = new String[colNumber];
             this.colSize = new int[colNumber];
 
-            int prevOffset = o + 6;
+            int prevOffset = o + 7;
             for (int i = 0; i < colNumber; i++) {
                 this.colNames[i] = info[prevOffset + 2*i];
                 this.colSize[i] = Integer.parseInt(info[prevOffset + 2*i + 1]);
@@ -294,5 +303,9 @@ public class TableAccess {
         }
 
         return this.colSize[columnNumber];
+    }
+
+    public int getKeyColumn(){
+        return keyColumn;
     }
 }

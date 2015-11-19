@@ -53,4 +53,8 @@ public class Table {
         }
         return findRecordLinear(colNumber, value);
     }
+
+    public String getKeyColumn(){
+        return accessor.getColumnName(accessor.getKeyColumn());
+    }
 }

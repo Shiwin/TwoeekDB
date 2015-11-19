@@ -77,6 +77,7 @@ public class SimpleDB {
         this.raf = raf;
         this.structure = structure;
         this.crtTable = null;
+        this.tableNames = new HashMap<>();
         ready = true;
     }
 
@@ -103,7 +104,7 @@ public class SimpleDB {
         ready = true;
     }
 
-    public void initializeTable(int tableNumber, String tableName, String[] colNames, int[] colSizes){
+    public void initializeTable(int tableNumber, String tableName, String[] colNames, int[] colSizes, int keyColumn){
         if(!isReady()){
             dbLogger.message("Database isn't created");
             return;
@@ -121,12 +122,13 @@ public class SimpleDB {
             return;
         }
         try {
-            TableAccess accessor = TableAccess.createTableAccess(raf,startEnd[0], startEnd[1], tableName, colNames, colSizes);
+            TableAccess accessor = TableAccess.createTableAccess(raf,startEnd[0], startEnd[1], tableName, colNames, colSizes, keyColumn);
             crtTable = new Table(accessor);
         } catch (IOException e) {
             dbLogger.message(e.getMessage());
             return;
         }
+        getTableNames();
     }
 
     private void getTableNames(){
