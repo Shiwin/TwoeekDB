@@ -1,4 +1,4 @@
-package com.company;
+package com.company.helpers;
 
 /**
  * Created by Сергей on 16.11.2015.

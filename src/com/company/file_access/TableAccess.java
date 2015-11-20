@@ -1,4 +1,4 @@
-package com.company;
+package com.company.file_access;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -10,6 +10,10 @@ public class TableAccess {
     private static final String HEADER_END = "\n";
 
     private static long headerSize = 1000;
+
+    public static long getHeaderSize(){
+        return headerSize;
+    }
 
     public static TableAccess createTableAccess(RandomAccessFile raf, long startPosition, long endPosition, String tableName, String[] colNames, int[] colSize, int keyColumn) throws IOException {
         if(raf == null){
@@ -314,6 +318,4 @@ public class TableAccess {
     public int getKeyColumn(){
         return keyColumn;
     }
-
-
 }

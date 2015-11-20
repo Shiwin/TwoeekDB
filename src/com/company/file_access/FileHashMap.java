@@ -1,4 +1,4 @@
-package com.company;
+package com.company.file_access;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -7,7 +7,7 @@ import java.util.List;
 
 public class FileHashMap {
 
-    private final int SIZE_OF_VALUE = 7;
+
     private final String FILLER = " ";
     private final String EMPTY_CELL = "\n";
     private final String CELL_END = "\n";
@@ -16,11 +16,12 @@ public class FileHashMap {
     long startPosition;
     long endPosition;
     int sizeOfKey;
+    private int sizeOfValue;
     int fullCellSize;
     int tableSize;
     int numberOfValues;
 
-    FileHashMap(RandomAccessFile raf, long startPosition, long endPosition, int tableSize, int sizeOfKey, int numberOfValues, boolean allowedExtendIfPossible) throws IOException {
+    public FileHashMap(RandomAccessFile raf, long startPosition, long endPosition, int tableSize, int sizeOfKey, int sizeOfValue, int numberOfValues, boolean allowedExtendIfPossible) throws IOException {
         if(raf == null){
             throw new NullPointerException("raf is null");
         }
@@ -35,8 +36,9 @@ public class FileHashMap {
         this.startPosition = startPosition;
         this.endPosition = endPosition;
         this.sizeOfKey = sizeOfKey;
+        this.sizeOfValue = sizeOfValue;
         this.numberOfValues = numberOfValues;
-        this.fullCellSize = SIZE_OF_VALUE * this.numberOfValues + this.sizeOfKey + CELL_END.length();
+        this.fullCellSize = sizeOfValue * this.numberOfValues + this.sizeOfKey + CELL_END.length();
 
         long expectedTableLength = this.fullCellSize * tableSize;
 
@@ -164,7 +166,7 @@ public class FileHashMap {
     private void writeKeyValueInEmptyCell(int hash, String key, int value) throws IOException {
         raf.seek(getCellPosition(hash));
         raf.write(normalizeString(key, sizeOfKey).getBytes());
-        raf.write(normalizeString(String.valueOf(value),SIZE_OF_VALUE).getBytes());
+        raf.write(normalizeString(String.valueOf(value), sizeOfValue).getBytes());
         raf.seek(getCellLastPosition(hash));
         raf.write(CELL_END.getBytes());
     }
@@ -199,8 +201,8 @@ public class FileHashMap {
     }
 
     private void writeValue(int cellHash, int valuesAlreadyThere, String value) throws IOException {
-        if(value.length() > this.SIZE_OF_VALUE){
-            throw new IllegalArgumentException("value size is greater then it is allowed");
+        if(value.length() > this.sizeOfValue){
+            throw new IllegalArgumentException("value sizeOfValue is greater then it is allowed");
         }
         long cellPosition = getCellPosition(cellHash);
         long nextCellPosition = -1;
@@ -209,13 +211,13 @@ public class FileHashMap {
         }else{
             nextCellPosition = this.endPosition;
         }
-        long valuePosition = cellPosition + sizeOfKey + SIZE_OF_VALUE * valuesAlreadyThere;
+        long valuePosition = cellPosition + sizeOfKey + sizeOfValue * valuesAlreadyThere;
         if(valuePosition + value.length() >= nextCellPosition){
             throw new IllegalStateException("no more space for values of this key");
         }
 
         raf.seek(valuePosition);
-        raf.write(normalizeString(value, SIZE_OF_VALUE).getBytes());
+        raf.write(normalizeString(value, sizeOfValue).getBytes());
     }
 
     private int hashLy(String key){
@@ -254,13 +256,12 @@ public class FileHashMap {
 
     private String[] parseKeyValue(String cellValue) throws Exception {
         List<String> listKeyValue = new ArrayList<>();
-        //String[] keyValues = new String[this.numberOfValues + 1];
 
         listKeyValue.add(cellValue.substring(0, sizeOfKey).trim());
 
         for(int i = 0; i < this.numberOfValues;i++){
-            int from = sizeOfKey + i * SIZE_OF_VALUE;
-            int to = from + SIZE_OF_VALUE;
+            int from = sizeOfKey + i * sizeOfValue;
+            int to = from + sizeOfValue;
             String substr = cellValue.substring(from, to);
             substr = substr.trim();
             try {
@@ -279,5 +280,13 @@ public class FileHashMap {
 
     public int getTableSize() {
         return tableSize;
+    }
+
+    public int getSizeOfKey() {
+        return sizeOfKey;
+    }
+
+    public int getSizeOfValue() {
+        return sizeOfValue;
     }
 }

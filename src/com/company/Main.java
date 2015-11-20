@@ -1,13 +1,14 @@
 package com.company;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import com.company.database_classes.SimpleDB;
+import com.company.helpers.TableInfo;
+
 import java.util.Arrays;
 import java.util.Random;
-import java.io.File;
 
 public class Main {
 
+    // random string
     public static String randomString(int maxLength){
         final int minLength = 1;
         if(maxLength < minLength){
@@ -28,44 +29,19 @@ public class Main {
         return result.toString();
     }
 
-    public static boolean generateFileWithRecords(String fileName, int numberOfRecords, int numberOfColumns, int[] colSizes) throws IOException {
-        final String splitter = " ";
-
-        File file = new File(fileName);
-        if(file.exists()){
-            return false;
-        }
-        file.createNewFile();
-
-        RandomAccessFile raf = new RandomAccessFile(file, "rw");
-
-        for(int crtRec = 0;crtRec < numberOfRecords;crtRec++){
-            StringBuilder sb = new StringBuilder();
-            if(crtRec < numberOfRecords - 1) {
-                for (int crtCol = 0; crtCol < numberOfColumns; crtCol++) {
-                    sb.append(randomString(colSizes[crtCol]));
-                    sb.append(splitter);
-                }
-                sb.append("\n");
-                raf.write(sb.toString().getBytes());
-            }else{
-                for (int crtCol = 0; crtCol < numberOfColumns; crtCol++) {
-                    sb.append("Hi");
-                    sb.append(splitter);
-                }
-                sb.append("\n");
-                raf.write(sb.toString().getBytes());
-            }
-        }
-        raf.close();
-
-        return true;
-    }
-
-    public static String[][] generateArrayWithRecords(int numberOfRecords, int numberOfColumns, int[] colSizes){
+    /**
+     * simulate values of set of records
+     *
+     * @param numberOfRecords
+     * @param numberOfColumns
+     * @param colSizes
+     * @param startUniqIdFrom if you want to add records in existing database and you have to provide uniq ID from some offset
+     * @return
+     */
+    public static String[][] generateArrayWithRecords(int numberOfRecords, int numberOfColumns, int[] colSizes, int startUniqIdFrom){
         String[][] result = new String[numberOfRecords][numberOfColumns];
 
-        int uniqOffset = 90000;
+        int uniqOffset = startUniqIdFrom;
         int uniqId = uniqOffset;
         for(int crtRec = 0;crtRec < numberOfRecords;crtRec++){
             if(crtRec < numberOfRecords - 1) {
@@ -81,7 +57,7 @@ public class Main {
                     if(crtCol == 0) {
                         result[crtRec][crtCol] = String.valueOf(uniqId);
                     }else{
-                        result[crtRec][crtCol] = "Hi";
+                        result[crtRec][crtCol] = "IO";
                     }
                 }
             }
@@ -91,59 +67,92 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        String dbName = "test";
 
-        long[][] sizes = new long[2][4];
-        sizes[0][0] = 20000000;
-        sizes[0][1] = 31000000;
-        sizes[0][2] = 32000000;
-        sizes[0][3] = 23000000;
+        //========================= INITIALIZE THE TABLES ====================================
 
-        sizes[1][0] = 30000000;
-        sizes[1][1] = 31000000;
-        sizes[1][2] = 42000000;
-        sizes[1][3] = 13000000;
-
-        //SimpleDB db = SimpleDB.createDB(dbName, sizes);
-        SimpleDB db = new SimpleDB(dbName);
-
+        TableInfo[] tables = new TableInfo[3];
         //table 1
-        String tableName = "students";
-        String[] columns = {"id", "name", "grade"};
-        int[] colSizes = {7, 100, 100};
-        //db.initializeTable(0, tableName, columns, colSizes, 0);
+        tables[0] = new TableInfo("student",1000000);
+        tables[0].addColumn("student_id",7,true);
+        tables[0].addColumn("student_name", 50, false);
+        tables[0].addColumn("student_grade", 2, false);
 
         //table 2
-        String tableName2 = "teachers";
-        String[] columns2 = {"id", "name", "speciality"};
-        int[] colSizes2 = {20, 600, 100};
-        //db.initializeTable(1, tableName2, columns2, colSizes2, 0);
+        tables[1] = new TableInfo("teacher",1000000);
+        tables[1].addColumn("teacher_id", 7, true);
+        tables[1].addColumn("teacher_name", 50, false);
+        tables[1].addColumn("teacher_room", 4, false);
+        tables[1].addColumn("teacher_age", 3, false);
 
-        Table table = db.getTable("students");
-        //write test records
-/*        String[][] records = generateArrayWithRecords(10000, colSizes.length,colSizes);
+        //table 3
+        tables[2] = new TableInfo("relation", 1000000);
+        tables[2].addColumn("relation_id", 7, true);
+        tables[2].addColumn("student_id", 7, false);
+        tables[2].addColumn("teacher_id", 7, false);
 
-        for(int i = 0;i < records.length;i++){
-            try {
-                table.addRecord(records[i]);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-        }*/
-        //
+        //=====================================================================================
 
-        try {
-            System.out.println(Arrays.toString(table.findRecord("id","36758")));
-        } catch (Exception e) {
-            e.printStackTrace();
+        //============== INITIALIZE DB IF DOESN'T EXIST (OR JUST GET ACCESS)===================
+        String dbName = "school_db";
+        SimpleDB db = null;
+
+        if(SimpleDB.exists(dbName)){
+            db = new SimpleDB(dbName);
+        }else{
+            db = SimpleDB.createDB(dbName, tables);
         }
 
-        System.out.println(table.getSize());
+        //=====================================================================================
 
-//        try {
-//            generateFileWithRecords("recs", 100, colSizes.length, colSizes);
-//        } catch (IOException e) {
-//            System.out.println(e.getMessage());
-//        }
+        //========================= WRITE RANDOM RECORDS ======================================
+        //-----------------(don't forget to comment it after the first run)--------------------
+
+        /**
+         * HERE IS ADD PART
+         */
+        /*
+        int uniqIdOffset = 0;
+        String[][] records1 = generateArrayWithRecords(700000, tables[0].getColumnsCount(), tables[0].getColumnSizes(), uniqIdOffset);
+        String[][] records2 = generateArrayWithRecords(700000, tables[1].getColumnsCount(), tables[1].getColumnSizes(), uniqIdOffset);
+        String[][] records3 = generateArrayWithRecords(700000, tables[2].getColumnsCount(), tables[2].getColumnSizes(), uniqIdOffset);
+
+        long startTime = System.nanoTime();
+        db.addRecords(tables[0].getName(),records1);
+        db.addRecords(tables[1].getName(),records2);
+        db.addRecords(tables[2].getName(),records3);
+        long endTime = System.nanoTime();
+
+        System.out.println("Time: " + (endTime - startTime));
+        */
+        /**
+         * HERE IS THE END OF EDDING PART
+         */
+
+        //=====================================================================================
+
+        //======================= GET SOME DATABASE INFORMATION ===============================
+
+        //number of table in db
+        System.out.println("Number of tables in db: " + db.getTablesCount());
+
+        //max number of record in table 1
+        System.out.println(tables[0].getName() + ": max " + db.getTableMaxSize(tables[0].getName()) + ", crt " +
+                                    db.getTableSize(tables[0].getName()));
+        //max number of record in table 2
+        System.out.println(tables[1].getName() + ": max " + db.getTableMaxSize(tables[1].getName()) + ", crt " +
+                db.getTableSize(tables[1].getName()));
+        //max number of record in table 3
+        System.out.println(tables[2].getName() + ": max " + db.getTableMaxSize(tables[2].getName()) + ", crt " +
+                db.getTableSize(tables[2].getName()));
+
+        //-------------------------------------------------------------------------------------
+
+        //=============================== SEARCHING RECORDS ===================================
+
+        int crtTable = 0;
+        String[] result = db.findRecords(tables[crtTable].getName(),
+                tables[crtTable].getColumnNames()[0], "0", 0, true).get(0);
+
+        System.out.println(Arrays.toString(result));
     }
 }
