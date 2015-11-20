@@ -65,7 +65,8 @@ public class Main {
     public static String[][] generateArrayWithRecords(int numberOfRecords, int numberOfColumns, int[] colSizes){
         String[][] result = new String[numberOfRecords][numberOfColumns];
 
-        int uniqId = 0;
+        int uniqOffset = 90000;
+        int uniqId = uniqOffset;
         for(int crtRec = 0;crtRec < numberOfRecords;crtRec++){
             if(crtRec < numberOfRecords - 1) {
                 for (int crtCol = 0; crtCol < numberOfColumns; crtCol++) {
@@ -93,15 +94,15 @@ public class Main {
         String dbName = "test";
 
         long[][] sizes = new long[2][4];
-        sizes[0][0] = 20000;
-        sizes[0][1] = 31000;
-        sizes[0][2] = 32000;
-        sizes[0][3] = 23000;
+        sizes[0][0] = 20000000;
+        sizes[0][1] = 31000000;
+        sizes[0][2] = 32000000;
+        sizes[0][3] = 23000000;
 
-        sizes[1][0] = 30000;
-        sizes[1][1] = 31000;
-        sizes[1][2] = 42000;
-        sizes[1][3] = 13000;
+        sizes[1][0] = 30000000;
+        sizes[1][1] = 31000000;
+        sizes[1][2] = 42000000;
+        sizes[1][3] = 13000000;
 
         //SimpleDB db = SimpleDB.createDB(dbName, sizes);
         SimpleDB db = new SimpleDB(dbName);
@@ -109,7 +110,7 @@ public class Main {
         //table 1
         String tableName = "students";
         String[] columns = {"id", "name", "grade"};
-        int[] colSizes = {100, 800, 20};
+        int[] colSizes = {7, 100, 100};
         //db.initializeTable(0, tableName, columns, colSizes, 0);
 
         //table 2
@@ -120,24 +121,24 @@ public class Main {
 
         Table table = db.getTable("students");
         //write test records
-/*        String[][] records = generateArrayWithRecords(10, colSizes.length,colSizes);
+/*        String[][] records = generateArrayWithRecords(10000, colSizes.length,colSizes);
 
         for(int i = 0;i < records.length;i++){
             try {
                 table.addRecord(records[i]);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
         }*/
         //
 
-/*        try {
-            System.out.println(Arrays.toString(table.findRecordLinear("name", "Hi")));
-        } catch (IOException e) {
+        try {
+            System.out.println(Arrays.toString(table.findRecord("id","36758")));
+        } catch (Exception e) {
             e.printStackTrace();
-        }*/
+        }
 
-        System.out.println(table.getKeyColumn());
+        System.out.println(table.getSize());
 
 //        try {
 //            generateFileWithRecords("recs", 100, colSizes.length, colSizes);

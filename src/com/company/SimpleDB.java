@@ -123,7 +123,9 @@ public class SimpleDB {
         }
         try {
             TableAccess accessor = TableAccess.createTableAccess(raf,startEnd[0], startEnd[1], tableName, colNames, colSizes, keyColumn);
-            crtTable = new Table(accessor);
+            long[] indexStartEnd = structure.getIndexStartEnd(tableNumber);
+            PrimaryIndex keyIndex = new PrimaryIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor,true);
+            crtTable = new Table(accessor, keyIndex);
         } catch (IOException e) {
             dbLogger.message(e.getMessage());
             return;
@@ -167,7 +169,11 @@ public class SimpleDB {
             return null;
         }
         try {
-            return new Table(new TableAccess(raf, startEnd[0], startEnd[1]));
+            long[] indexStartEnd = structure.getIndexStartEnd(tableNumber);
+            TableAccess accessor = new TableAccess(raf, startEnd[0], startEnd[1]);
+            PrimaryIndex keyIndex = new PrimaryIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor, false);
+            crtTable = new Table(accessor, keyIndex);
+            return crtTable;
         } catch (IOException e) {
             dbLogger.message(e.getMessage());
             return null;

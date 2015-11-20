@@ -206,7 +206,7 @@ public class TableAccess {
         }
     }
 
-    public void addRecord(String[] values) throws IOException {
+    public int addRecord(String[] values) throws IOException {
         if(values.length != colNames.length){
             throw new IndexOutOfBoundsException("Wrong column number");
         }
@@ -218,6 +218,7 @@ public class TableAccess {
         }
         tableSize++;
         updateHeaderInFile();
+        return tableSize - 1;
     }
 
     public String[] getRecord(int recordNumber) throws IOException {
@@ -285,6 +286,11 @@ public class TableAccess {
         return tableSize;
     }
 
+    public int getMaxTableSize(){
+        long maxSize = (endPosition - startPosition) / getFullRecordLength();
+        return (int)maxSize;
+    }
+
     public int getCountOfColumns(){
         return this.colNames.length;
     }
@@ -308,4 +314,6 @@ public class TableAccess {
     public int getKeyColumn(){
         return keyColumn;
     }
+
+
 }

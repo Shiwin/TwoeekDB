@@ -135,7 +135,11 @@ public class FileHashMap {
         String[] resultStrings = getKeyValueByHash(hash);
         while((resultStrings == null || !resultStrings[0].equals(key)) && hash < tableSize){
             hash++;
-            resultStrings = getKeyValueByHash(hash);
+            if(hash < tableSize) {
+                resultStrings = getKeyValueByHash(hash);
+            }else{
+                return null;
+            }
         }
         if(resultStrings == null){
             return null;
