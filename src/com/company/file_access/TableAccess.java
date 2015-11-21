@@ -65,6 +65,7 @@ public class TableAccess {
     private int keyColumn;
 
     private TableAccess(RandomAccessFile raf, long startPosition, long endPosition, long dataStartPosition, String tableName, String[] colNames, int[] colSize, int keyColumn){
+        this.raf = raf;
         this.startPosition = startPosition;
         this.endPosition = endPosition;
         this.dataStartPosition = dataStartPosition;
@@ -243,7 +244,8 @@ public class TableAccess {
 
     private void updateColumnValue(int recordNumber, int colNumber, String value) throws IOException {
         if(value.length() > this.colSize[colNumber]){
-            throw new IllegalArgumentException("length of value is bigger then it is allowed");
+            throw new IllegalArgumentException("length of value \'" + value +
+                    "\' is bigger then it is allowed in colunm \'" + colNames[colNumber] + "\' (" + colSize[colNumber] + ")");
         }
 
         long[] startEnd = getCellStartEndPosition(recordNumber, colNumber);

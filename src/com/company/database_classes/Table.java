@@ -15,19 +15,26 @@ public class Table {
     //============================= private fields ===================================
     private TableAccess accessor;       // get access to the table according to given start/end positions in file
     private PrimaryIndex keyIndex;      // get access to the index according to given start/end positions in file
+
+    private ColumnIndex[] columnIndexes;
     //================================================================================
 
     /**
      * Takes already defined accessor and keyIndex (they are defined in SimpleDB)
      * @param accessor
      * @param keyIndex
+     * @param columnIndexes
      */
-    public Table(TableAccess accessor, PrimaryIndex keyIndex) {
+    public Table(TableAccess accessor, PrimaryIndex keyIndex, ColumnIndex[] columnIndexes){
         if (accessor == null) {
             return;
         }
         this.accessor = accessor;
         this.keyIndex = keyIndex;
+        if(columnIndexes != null && columnIndexes.length != accessor.getCountOfColumns()){
+            throw new IllegalArgumentException("count of columnIndexes must be the same as count of columns themselves");
+        }
+        this.columnIndexes = columnIndexes;
     }
 
     /**
@@ -49,10 +56,22 @@ public class Table {
             throw new Exception("Record with this primary key has been already added.");
         }
         */
+        int nextNumber = this.accessor.getTableSize();
+        if(this.keyIndex != null) {
+            this.keyIndex.put(values[accessor.getKeyColumn()], nextNumber);
+        }
+
+        if(columnIndexes != null){
+            for(int i = 0;i < columnIndexes.length;i++){
+                if(this.columnIndexes[i] != null) {
+                    this.columnIndexes[i].put(values[i], nextNumber);
+                }
+            }
+        }
 
         int number = this.accessor.addRecord(values);
-        if(this.keyIndex != null) {
-            this.keyIndex.put(values[accessor.getKeyColumn()], number);
+        if(nextNumber != number){
+            throw new Exception("Next number and previous size are different.");
         }
     }
 
@@ -78,9 +97,20 @@ public class Table {
         List<String[]> result = null;
         if(colNumber == accessor.getKeyColumn()){
             result = new ArrayList<>();
-            result.add(searchRecordByKeyColumn(value));
+            String[] keyRecord = searchRecordByKeyColumn(value);
+            if(keyRecord != null) {
+                result.add(keyRecord);
+            }
         }else {
-            result = searchRecordLinear(colNumber, value, searchingLimit);
+            if(columnIndexes == null) {
+                result = searchRecordLinear(colNumber, value, searchingLimit);
+            }else{
+                if(columnIndexes[colNumber] != null){
+                    result = searchRecordByIndex(colNumber,value);
+                }else{
+                    result = searchRecordLinear(colNumber,value,0);
+                }
+            }
         }
         return result;
     }
@@ -133,6 +163,22 @@ public class Table {
             throw new IllegalStateException("Index must keep only one value for primary key");
         }
         return getRecord(recordNumbers[0]);
+    }
+
+    private List<String[]> searchRecordByIndex(int colNumber, String value) throws Exception {
+        if(this.columnIndexes == null){
+            throw new IllegalStateException("Can't use searching by index for non-indexed column");
+        }
+        int[] recordNumbers = this.columnIndexes[colNumber].get(value);
+        List<String[]> results = new ArrayList<>();
+        if(recordNumbers == null){
+            return results;
+        }
+        for (int i = 0; i < recordNumbers.length; i++) {
+            String[] crtRecord = getRecord(recordNumbers[i]);
+            results.add(crtRecord);
+        }
+        return results;
     }
 
     /**

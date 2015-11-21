@@ -10,6 +10,7 @@ public class FileHashMap {
 
     private final String FILLER = " ";
     private final String EMPTY_CELL = "\n";
+    private final String NO_HASH = "#";
     private final String CELL_END = "\n";
 
     RandomAccessFile raf;
@@ -43,7 +44,10 @@ public class FileHashMap {
         long expectedTableLength = this.fullCellSize * tableSize;
 
         if(expectedTableLength > endPosition - startPosition){
-            throw new IllegalArgumentException("expected length of hash table is less then allocated space in file");
+            //throw new IllegalArgumentException("expected length of hash table is less then allocated space in file");
+            raf.seek(startPosition);
+            raf.write((NO_HASH + CELL_END).getBytes());
+            return;
         }
 
         if(allowedExtendIfPossible){
@@ -58,11 +62,22 @@ public class FileHashMap {
         this.endPosition = this.startPosition + expectedTableLength;
     }
 
+    public boolean isExist() throws IOException {
+        raf.seek(this.startPosition);
+        String cell = raf.readLine();
+        if(cell.equals(NO_HASH)){
+            return false;
+        }
+        return true;
+    }
+
     public void initializeEmpty() throws IOException {
-        for(int i = 0;i < tableSize;i++){
-            long crtPosition = getCellPosition(i);
-            raf.seek(crtPosition);
-            raf.write(EMPTY_CELL.getBytes());
+        if(isExist()) {
+            for (int i = 0; i < tableSize; i++) {
+                long crtPosition = getCellPosition(i);
+                raf.seek(crtPosition);
+                raf.write(EMPTY_CELL.getBytes());
+            }
         }
     }
 
@@ -83,6 +98,9 @@ public class FileHashMap {
         }
         if(key.length() > sizeOfKey){
             throw new IllegalArgumentException("length of key must be not greater then " + sizeOfKey);
+        }
+        if(!isExist()){
+            return false;
         }
 
         int cellHash = hashFunction(key);
@@ -132,6 +150,9 @@ public class FileHashMap {
     }
 
     public int[] get(String key) throws Exception {
+        if(!isExist()){
+            return null;
+        }
         int hash = hashFunction(key);
 
         String[] resultStrings = getKeyValueByHash(hash);

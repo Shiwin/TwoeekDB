@@ -7,7 +7,7 @@ import java.io.RandomAccessFile;
 
 public class ColumnIndex extends Index{
 
-    ColumnIndex(RandomAccessFile raf, long startPosition, long endPosition, TableAccess tableAccessor, int columnNumber, int sizeOfValue, int countOfValues, boolean shouldBeInit) throws IOException {
-        super(raf, startPosition, endPosition, tableAccessor, columnNumber, sizeOfValue, countOfValues, shouldBeInit);
+    ColumnIndex(RandomAccessFile raf, long startPosition, long endPosition, TableAccess tableAccessor, int columnNumber, int countOfValues, boolean shouldBeInit) throws IOException {
+        super(raf, startPosition, endPosition, tableAccessor, columnNumber, countOfValues, shouldBeInit);
     }
 }

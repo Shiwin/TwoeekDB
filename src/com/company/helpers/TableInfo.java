@@ -10,11 +10,12 @@ import java.util.List;
 public class TableInfo {
     //============================= private fields ===================================
     private String name;
-    private List<String> columns;           //names of columns
-    private List<Integer> columnsSizes;     //sizes (== length) of each column
-    private int columnsCount;               //number of columns (not less then 1)
-    private int maxNumberOfRecords;         //max value of allowed records in future table
-    private int numberOfKeyColumn;          //number of column which will be the primary key - MUST BE DECLARED
+    private List<String> columns;                   //names of columns
+    private List<Integer> columnsSizes;             //sizes (== length) of each column
+    private List<Integer> maxCountOfRepeatedValues; //necessary for creating column indexes
+    private int columnsCount;                       //number of columns (not less then 1)
+    private int maxNumberOfRecords;                 //max value of allowed records in future table
+    private int numberOfKeyColumn;                  //number of column which will be the primary key - MUST BE DECLARED
     //================================================================================
 
     public TableInfo(String name, int maxNumberOfRecords){
@@ -28,6 +29,7 @@ public class TableInfo {
         this.maxNumberOfRecords = maxNumberOfRecords;
         this.columns = new ArrayList<>();
         this.columnsSizes = new ArrayList<>();
+        this.maxCountOfRepeatedValues = new ArrayList<>();
         columnsCount = 0;
         this.numberOfKeyColumn = -1;
     }
@@ -50,6 +52,13 @@ public class TableInfo {
         return true;
     }
 
+    public void addColumn(String columnName, int columnSize, int maxCountOfRepeatedValues){
+        addColumn(columnName,columnSize,false,maxCountOfRepeatedValues);
+    }
+    public void addPrimaryColumn(String columnName, int columnSize){
+        addColumn(columnName,columnSize,true,1);
+    }
+
     /**
      * Adds description of new column
      * @param columnName
@@ -57,7 +66,7 @@ public class TableInfo {
      * @param isPrimary if this column is primary key
      *                  ONLY ONE COLUMN CAN BE PRIMARY
      */
-    public void addColumn(String columnName, int columnSize, boolean isPrimary){
+    private void addColumn(String columnName, int columnSize, boolean isPrimary, int maxCountOfRepeatedValues){
         if(columnName == null){
             throw new NullPointerException("columnName is null");
         }
@@ -70,6 +79,8 @@ public class TableInfo {
 
         this.columns.add(columnName);
         this.columnsSizes.add(columnSize + 1); // 1 - length of '\n' in the end of column
+        this.maxCountOfRepeatedValues.add(maxCountOfRepeatedValues);
+
         this.columnsCount++;
         if(isPrimary){
             this.numberOfKeyColumn = this.columnsCount - 1;
@@ -88,14 +99,6 @@ public class TableInfo {
         return maxNumberOfRecords;
     }
 
-    public Pair<String, Integer> getColumns(int number) {
-        if(number < 0 || number > columnsCount){
-            throw new IndexOutOfBoundsException("number not in bounds");
-        }
-        Pair<String, Integer> pair = new Pair<>(this.columns.get(number), this.columnsSizes.get(number));
-        return pair;
-    }
-
     //==================== METHODS ARE USED IN CREATING DATABASE ======================
 
     /**
@@ -110,6 +113,7 @@ public class TableInfo {
     }
 
     public int getKeyColumnSize(){
+
         return this.columnsSizes.get(this.numberOfKeyColumn);
     }
 
@@ -131,5 +135,13 @@ public class TableInfo {
 
     public int getKeyColumnNumber() {
         return this.numberOfKeyColumn;
+    }
+
+    public int[] getMaxCountOfRepeatedValues() {
+        int[] maxCountOfRepeatedValues = new int[this.maxCountOfRepeatedValues.size()];
+        for (int i = 0; i < maxCountOfRepeatedValues.length; i++) {
+            maxCountOfRepeatedValues[i] = this.maxCountOfRepeatedValues.get(i);
+        }
+        return maxCountOfRepeatedValues;
     }
 }

@@ -12,10 +12,7 @@ public class PrimaryIndex extends Index {
 
     //================================ STATIC ========================================
 
-    private static final int SIZE_OF_INTEGER = 7;       // max size of position value (in case of integer primary key)
-    public static int getSizeOfIntegerValue(){
-        return SIZE_OF_INTEGER;
-    }
+
 
     //================================================================================
 
@@ -30,7 +27,7 @@ public class PrimaryIndex extends Index {
      * @throws IOException
      */
     PrimaryIndex(RandomAccessFile raf, long startPosition, long endPosition, TableAccess tableAccessor, boolean shouldBeInit) throws IOException {
-        super(raf, startPosition, endPosition,tableAccessor, tableAccessor.getKeyColumn(), SIZE_OF_INTEGER, 1, shouldBeInit);
+        super(raf, startPosition, endPosition,tableAccessor, tableAccessor.getKeyColumn(), 1, shouldBeInit);
     }
 
 }
