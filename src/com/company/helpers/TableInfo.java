@@ -36,7 +36,6 @@ public class TableInfo {
      * NOT ready if:
      *      1. number of column less then 1
      *      2. different number of columns and size of column's list ans sizes' list (impossible situation, throws exception, if it happens)
-     *      3. primary key isn't given
      * @return
      */
     public boolean isReady(){
@@ -46,10 +45,6 @@ public class TableInfo {
 
         if(this.columns.size() != this.columnsCount || this.columnsSizes.size() != this.columnsCount){
             throw new IllegalStateException("columnCount is different from same list values");
-        }
-
-        if(this.numberOfKeyColumn == -1){
-            return false;
         }
 
         return true;
