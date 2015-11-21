@@ -26,9 +26,6 @@ public class Table {
         if (accessor == null) {
             return;
         }
-        if(this.keyIndex == null){
-            return;
-        }
         this.accessor = accessor;
         this.keyIndex = keyIndex;
     }
@@ -54,7 +51,9 @@ public class Table {
         */
 
         int number = this.accessor.addRecord(values);
-        this.keyIndex.put(values[accessor.getKeyColumn()], number);
+        if(this.keyIndex != null) {
+            this.keyIndex.put(values[accessor.getKeyColumn()], number);
+        }
     }
 
     /**

@@ -17,6 +17,7 @@ public class SimpleDB {
 
     private static String dbFolder = "database";
     private static String dbExtension = "db";
+    private static String pathSplitter = "\\";
     private static Logger dbLogger = new Logger();
 
 
@@ -31,6 +32,12 @@ public class SimpleDB {
     public static void setDBFolder(String dbFolder){
         SimpleDB.dbFolder = dbFolder;
     }
+    public static String getPathSplitter() {
+        return pathSplitter;
+    }
+    public static void setPathSplitter(String pathSplitter) {
+        SimpleDB.pathSplitter = pathSplitter;
+    }
 
     public static SimpleDB createDB(String name, TableInfo[] tablesDescription){
         if(name == null){
@@ -43,7 +50,7 @@ public class SimpleDB {
         for (int i = 0; i < tablesDescription.length; i++) {
             if(!tablesDescription[i].isReady()){
                 throw new IllegalArgumentException("Table " + tablesDescription[i].getName() + " isn't ready for initialization." +
-                        "Check for enough number of columns or correctly set primary key");
+                        "Check for enough number of columns");
             }
         }
 
@@ -109,8 +116,12 @@ public class SimpleDB {
         double indexFactor = 1.5;
         int coumnOfValues = 1;
         for(int crtIndex = 0;crtIndex < tableAndIndexesSizes[1].length;crtIndex++){
-            tableAndIndexesSizes[1][crtIndex] = (long)(((PrimaryIndex.getSizeOfIntegerValue() * coumnOfValues
-                    + tableInfos[crtIndex].getKeyColumnSize()) * tableInfos[crtIndex].getMaxNumberOfRecords()) * indexFactor);
+            if (tableInfos[crtIndex].getKeyColumnNumber() > -1) {
+                tableAndIndexesSizes[1][crtIndex] = (long)(((PrimaryIndex.getSizeOfIntegerValue() * coumnOfValues
+                        + tableInfos[crtIndex].getKeyColumnSize()) * tableInfos[crtIndex].getMaxNumberOfRecords()) * indexFactor);
+            }else {
+                tableAndIndexesSizes[1][crtIndex] = 2; //empty index
+            }
         }
 
         return tableAndIndexesSizes;
@@ -182,7 +193,7 @@ public class SimpleDB {
             try {
                 table.addRecord(crtRecord);
             } catch (Exception e) {
-                dbLogger.message("Can't add record: " + e.getMessage());
+                dbLogger.message("Table " + tableName + ", can't add record: " + e.getMessage());
             }
         }
     }
@@ -319,7 +330,11 @@ public class SimpleDB {
         try {
             TableAccess accessor = TableAccess.createTableAccess(raf,startEnd[0], startEnd[1], tableName, colNames, colSizes, keyColumn);
             long[] indexStartEnd = structure.getIndexStartEnd(tableNumber);
-            PrimaryIndex keyIndex = new PrimaryIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor,true);
+            if(keyColumn > -1) {
+                PrimaryIndex keyIndex = new PrimaryIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor, true);
+            }else{
+                // primary index won't be created
+            }
         } catch (IOException e) {
             dbLogger.message(e.getMessage());
             return;
@@ -373,7 +388,10 @@ public class SimpleDB {
         try {
             long[] indexStartEnd = structure.getIndexStartEnd(tableNumber);
             TableAccess accessor = new TableAccess(raf, startEnd[0], startEnd[1]);
-            PrimaryIndex keyIndex = new PrimaryIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor, false);
+            PrimaryIndex keyIndex = null;
+            if(accessor.getKeyColumn() > -1) {
+                keyIndex = new PrimaryIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor, false);
+            }
             Table crtTable = new Table(accessor, keyIndex);
             return crtTable;
         } catch (IOException e) {
