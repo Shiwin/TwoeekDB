@@ -15,7 +15,7 @@ public class TableAccess {
         return headerSize;
     }
 
-    public static TableAccess createTableAccess(RandomAccessFile raf, long startPosition, long endPosition, String tableName, String[] colNames, int[] colSize, int keyColumn) throws IOException {
+    public static TableAccess createTableAccess(RandomAccessFile raf, long startPosition, long endPosition, String tableName, String[] colNames, int[] colSize, int keyColumn, int nextId) throws IOException {
         if(raf == null){
             throw new NullPointerException("raf is null");
         }
@@ -48,7 +48,7 @@ public class TableAccess {
 
         int colNumber = colNames.length;
 
-        updateHeaderInFile(raf, startPosition, endPosition, tableName, colNames, colSize, keyColumn, 0);
+        updateHeaderInFile(raf, startPosition, endPosition, tableName, colNames, colSize, keyColumn, 0, nextId);
 
         return new TableAccess(raf, startPosition, endPosition, startPosition + headerSize, tableName, colNames, colSize, keyColumn);
     }
@@ -63,6 +63,7 @@ public class TableAccess {
     private int[] colSize;
     private int tableSize;
     private int keyColumn;
+    private int nextId;
 
     private TableAccess(RandomAccessFile raf, long startPosition, long endPosition, long dataStartPosition, String tableName, String[] colNames, int[] colSize, int keyColumn){
         this.raf = raf;
@@ -88,7 +89,7 @@ public class TableAccess {
         return map;
     }
 
-    private static void updateHeaderInFile(RandomAccessFile raf, long startPosition, long endPosition, String tableName, String[] colNames, int[] colSize, int keyColumn, int size) throws IOException {
+    private static void updateHeaderInFile(RandomAccessFile raf, long startPosition, long endPosition, String tableName, String[] colNames, int[] colSize, int keyColumn, int size, int nextId) throws IOException {
         int colNumber = colNames.length;
         StringBuilder sb = new StringBuilder();
         sb.append(startPosition);
@@ -105,6 +106,8 @@ public class TableAccess {
         sb.append(SPLITTER);
         sb.append(size);
         sb.append(SPLITTER);
+        sb.append(nextId);
+        sb.append(SPLITTER);
         for(int i = 0; i < colNumber;i++){
             sb.append(colNames[i]);
             sb.append(SPLITTER);
@@ -118,7 +121,7 @@ public class TableAccess {
         raf.write(sb.toString().getBytes());
     }
     private void updateHeaderInFile() throws IOException {
-        updateHeaderInFile(raf, startPosition, endPosition, tableName, colNames, colSize, keyColumn, tableSize);
+        updateHeaderInFile(raf, startPosition, endPosition, tableName, colNames, colSize, keyColumn, tableSize, nextId);
     }
 
     private void parseHeader(String[] info){
@@ -135,11 +138,12 @@ public class TableAccess {
             int colNumber = Integer.parseInt(info[o + 4]);
             this.keyColumn = Integer.parseInt(info[o + 5]);
             this.tableSize = Integer.parseInt(info[o + 6]);
+            this.nextId = Integer.parseInt(info[0 + 7]);
 
             this.colNames = new String[colNumber];
             this.colSize = new int[colNumber];
 
-            int prevOffset = o + 7;
+            int prevOffset = o + 8;
             for (int i = 0; i < colNumber; i++) {
                 this.colNames[i] = info[prevOffset + 2*i];
                 this.colSize[i] = Integer.parseInt(info[prevOffset + 2*i + 1]);
@@ -222,6 +226,7 @@ public class TableAccess {
             }
         }
         tableSize++;
+        nextId++;
         updateHeaderInFile();
         return tableSize - 1;
     }
@@ -319,5 +324,9 @@ public class TableAccess {
 
     public int getKeyColumn(){
         return keyColumn;
+    }
+
+    public int getNextId() {
+        return nextId;
     }
 }

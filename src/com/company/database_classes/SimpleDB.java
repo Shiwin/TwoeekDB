@@ -255,6 +255,35 @@ public class SimpleDB {
         }
     }
 
+    public boolean updateRecord(String tableName, String columnName, String value, String[] updatedValues){
+        if (tableName == null) {
+            throw new NullPointerException("tableName is null");
+        }
+        if (columnName == null) {
+            throw new NullPointerException("columnName is null");
+        }
+        if(value == null){
+            throw new NullPointerException("value is null");
+        }
+        if (updatedValues == null) {
+            throw new NullPointerException("updatedValues is null");
+        }
+
+        Table table = getTable(tableName);
+        if (table == null) {
+            dbLogger.message("Can't find table with name " + tableName);
+            return false;
+        }
+        boolean result = false;
+        try {
+            result = table.updateRecord(columnName,value, updatedValues);
+        } catch (Exception e) {
+            dbLogger.message("Can't update record");
+            return false;
+        }
+        return result;
+    }
+
     /**
      * Search for records:
      * <p>
@@ -314,6 +343,18 @@ public class SimpleDB {
             return -1;
         }
         return table.getSize();
+    }
+
+    public int getNextTableId(String tableName){
+        if (tableName == null) {
+            throw new NullPointerException("tableName is null");
+        }
+        Table table = getTable(tableName);
+        if (table == null) {
+            dbLogger.message("Can't find table with name " + tableName);
+            return -1;
+        }
+        return table.getNextId();
     }
 
     /**
@@ -382,6 +423,7 @@ public class SimpleDB {
         int[] colSizes = crtTableInfo.getColumnSizes();
         int[] maxCountOfRepeatedValues = crtTableInfo.getMaxCountOfRepeatedValues();
         int keyColumn = crtTableInfo.getKeyColumnNumber();
+        int nextId = crtTableInfo.getNextId();
 
         long[] startEnd = null;
         try {
@@ -391,7 +433,7 @@ public class SimpleDB {
             return;
         }
         try {
-            TableAccess accessor = TableAccess.createTableAccess(raf, startEnd[0], startEnd[1], tableName, colNames, colSizes, keyColumn);
+            TableAccess accessor = TableAccess.createTableAccess(raf, startEnd[0], startEnd[1], tableName, colNames, colSizes, keyColumn,nextId);
 
             int[] maxCountOfUniqWordInRecordColumn = tableInfos[tableNumber].getMaxCountOfUniqWordInRecordColumn();
             for (int i = 0; i < maxCountOfRepeatedValues.length; i++) {
