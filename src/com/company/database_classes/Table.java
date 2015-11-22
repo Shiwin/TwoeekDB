@@ -79,43 +79,41 @@ public class Table {
         }
     }
 
-
-/*
-    private String[] getUniqWords(String text, int longerThen) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(text);
-        for (int i = 0; i < unsignificantChars.length; i++) {
-            int del = sb.indexOf(String.valueOf(unsignificantChars[i]));
-            while (del > -1) {
-                sb.delete(del, del + 1);
-                del = sb.indexOf(String.valueOf(unsignificantChars[i]));
-            }
+    public boolean updateRecord(String columnName, String searchingValue, String[] values) throws Exception {
+        HashMap<String, Integer> columns = accessor.getColNamesHash();
+        Integer colNumber = columns.get(columnName);
+        if (colNumber == null) {
+            return false;
         }
-        int del = sb.indexOf("  ");
-        while (del > -1) {
-            sb.replace(del, del + 2, " ");
-            del = sb.indexOf("  ");
-        }
-        String[] result = sb.toString().split(" ");
-        Set<String> list = new HashSet<>();
-        for (int i = 0; i < result.length; i++) {
-            if (result[i].length() > longerThen) {
-                if (!list.contains(result[i]) && !Arrays.asList(ESCAPE_WORDS).contains(result[i])) {
-                    list.add(result[i]);
+        int[] recordsNumbers = null;
+        if (colNumber == accessor.getKeyColumn()) {
+            recordsNumbers = keyIndex.get(searchingValue);
+        } else {
+            if (columnIndexes[colNumber] != null) {
+                if (this.columnIndexes[colNumber].getCountOfUniqWordsInRecordColumn() > 0) {
+                    recordsNumbers = getResultbyMultiWordIndex(colNumber, searchingValue);
+                } else {
+                    recordsNumbers = this.columnIndexes[colNumber].get(searchingValue);
                 }
+            } else {
+                // mustn't be reached
             }
         }
-        Iterator<String> iterator = list.iterator();
-        result = new String[list.size()];
-        int i = 0;
-        while (iterator.hasNext()) {
-            String crtSting = iterator.next();
-            result[i] = crtSting.toLowerCase();
-            i++;
+        if(recordsNumbers == null){
+            return false;
+        }else{
+            for (int i = 0; i < recordsNumbers.length; i++) {
+                String[] rec = this.accessor.getRecord(recordsNumbers[i]);
+                for (int j = 0; j < values.length; j++) {
+                    if(!values[j].equals("")){
+                        rec[j] = values[j];
+                    }
+                }
+                this.accessor.updateRecord(recordsNumbers[i], rec);
+            }
         }
-        return result;
+        return true;
     }
-*/
 
     private Set<Character> unsignificantChars = new LinkedHashSet<>();
     {unsignificantChars.add('!');unsignificantChars.add('@');unsignificantChars.add('#');unsignificantChars.add('$');
@@ -143,7 +141,6 @@ public class Table {
         ESCAPE_WORDS.add("till");ESCAPE_WORDS.add("to");ESCAPE_WORDS.add("under");ESCAPE_WORDS.add("unlike");
         ESCAPE_WORDS.add("until");ESCAPE_WORDS.add("up");ESCAPE_WORDS.add("with");ESCAPE_WORDS.add("without");
     }
-
 
     private Set<String> getUniqWords(String text, int longerThen){
         text = text.trim().toLowerCase();
