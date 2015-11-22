@@ -133,12 +133,12 @@ public class SimpleDB {
 
                 if (tableInfos[i].getKeyColumnNumber() == j) {
                     tableAndIndexesSizes[1][crtIndex] = (long) (((PrimaryIndex.getSizeOfIntegerValue() * 1
-                            + tableInfos[i].getKeyColumnSize()) * tableInfos[i].getMaxNumberOfRecords()) * indexFactor);
+                            + tableInfos[i].getKeyColumnSize() + 2) * tableInfos[i].getMaxNumberOfRecords()) * indexFactor);// 2 - size of checking char in HashFile
                 } else {
                     if (maxCountOfRepeatedValues[j] > 0) {
                         tableAndIndexesSizes[1][crtIndex] = (long) (((PrimaryIndex.getSizeOfIntegerValue() * maxCountOfRepeatedValues[j]
-                                + columnSizes[j]) * tableInfos[i].getMaxNumberOfRecords()) * indexFactor) + 8; // 8 - size of integer = meta info
-                    }else{
+                                + columnSizes[j] + 2) * tableInfos[i].getMaxNumberOfRecords()) * indexFactor) + 8; // 8 - size of integer = meta info
+                    }else{                                                                                         // 2 - size of checking char in HashFile
                         tableAndIndexesSizes[1][crtIndex] = 2 + 8; // 8 - size of integer = meta info
                     }
                 }

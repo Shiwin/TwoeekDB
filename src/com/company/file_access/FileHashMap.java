@@ -4,14 +4,19 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class FileHashMap {
 
 
     private final String FILLER = " ";
     private final String EMPTY_CELL = "\n";
-    private final String NO_HASH = "#";
+    private final Character NO_HASH = '#';
+    private final Character EXIST = '*';
     private final String CELL_END = "\n";
+
+    private final char VALUE_IS_HERE = '!';
+    private final int CHECKING_CHAR_SIZE = 2;
 
     RandomAccessFile raf;
     long startPosition;
@@ -23,13 +28,13 @@ public class FileHashMap {
     int numberOfValues;
 
     public FileHashMap(RandomAccessFile raf, long startPosition, long endPosition, int tableSize, int sizeOfKey, int sizeOfValue, int numberOfValues, boolean allowedExtendIfPossible) throws IOException {
-        if(raf == null){
+        if (raf == null) {
             throw new NullPointerException("raf is null");
         }
-        if(startPosition > endPosition){
+        if (startPosition > endPosition) {
             throw new IllegalArgumentException("startPosition must be less then endPosition");
         }
-        if(raf.length() < endPosition){
+        if (raf.length() < endPosition) {
             throw new IllegalArgumentException("raf length is less then endPosition");
         }
 
@@ -39,23 +44,23 @@ public class FileHashMap {
         this.sizeOfKey = sizeOfKey;
         this.sizeOfValue = sizeOfValue;
         this.numberOfValues = numberOfValues;
-        this.fullCellSize = sizeOfValue * this.numberOfValues + this.sizeOfKey + CELL_END.length();
+        this.fullCellSize = sizeOfValue * this.numberOfValues + this.sizeOfKey + CELL_END.length() + CHECKING_CHAR_SIZE;
 
         long expectedTableLength = this.fullCellSize * tableSize;
 
-        if(expectedTableLength > endPosition - startPosition){
+        if (expectedTableLength > endPosition - startPosition) {
             //throw new IllegalArgumentException("expected length of hash table is less then allocated space in file");
             raf.seek(startPosition);
-            raf.write((NO_HASH + CELL_END).getBytes());
+            raf.writeChar(NO_HASH);
             return;
         }
 
-        if(allowedExtendIfPossible){
+        if (allowedExtendIfPossible) {
             long availableSpace = endPosition - startPosition;
             long newTableSize = availableSpace / this.fullCellSize;
             expectedTableLength = this.fullCellSize * newTableSize;
-            this.tableSize = (int)newTableSize;
-        }else{
+            this.tableSize = (int) newTableSize;
+        } else {
             this.tableSize = tableSize;
         }
 
@@ -64,15 +69,15 @@ public class FileHashMap {
 
     public boolean isExist() throws IOException {
         raf.seek(this.startPosition);
-        String cell = raf.readLine();
-        if(cell.equals(NO_HASH)){
+        Character isExistChar = raf.readChar();
+        if (isExistChar.equals(NO_HASH)) {
             return false;
         }
         return true;
     }
 
     public void initializeEmpty() throws IOException {
-        if(isExist()) {
+        if (isExist()) {
             for (int i = 0; i < tableSize; i++) {
                 long crtPosition = getCellPosition(i);
                 raf.seek(crtPosition);
@@ -82,7 +87,7 @@ public class FileHashMap {
     }
 
     public void clear() throws IOException {
-        for(int i = 0;i < tableSize;i++){
+        for (int i = 0; i < tableSize; i++) {
             long crtPosition = getCellPosition(i);
             raf.seek(crtPosition);
             raf.write(emptyString(this.fullCellSize).getBytes());
@@ -93,13 +98,14 @@ public class FileHashMap {
     }
 
     public boolean put(String key, int value) throws Exception {
-        if(key == null){
+
+        if (key == null) {
             throw new NullPointerException("key is null");
         }
-        if(key.length() > sizeOfKey){
+        if (key.length() > sizeOfKey) {
             throw new IllegalArgumentException("length of key must be not greater then " + sizeOfKey);
         }
-        if(!isExist()){
+        if (!isExist()) {
             return false;
         }
 
@@ -107,27 +113,39 @@ public class FileHashMap {
         int crtHash = cellHash;
 
         raf.seek(getCellPosition(crtHash));
-        String cell = raf.readLine();
-        if (cell.length() > EMPTY_CELL.length()) {
+        Character checkChar = raf.readChar();
+        if (checkChar.equals(VALUE_IS_HERE)) {
+            raf.seek(getCellPosition(crtHash));
+            String cell = raf.readLine();
+
+            if (key.equals("80020")) {
+                boolean test = false;
+            }
             String[] keyValues = parseKeyValue(cell);
             String crtKey = keyValues[0];
             if (key.equals(crtKey)) {
+
+                if(crtKey.equals("1666")){
+                    boolean test = false;
+                }
                 writeValue(crtHash, keyValues.length - 1, String.valueOf(value));
                 raf.seek(getCellLastPosition(crtHash));
                 raf.write(CELL_END.getBytes());
                 return true;
-            }else{
-                while(cell.length() > EMPTY_CELL.length() && crtHash < tableSize) {
+            } else {
+                while (checkChar.equals(VALUE_IS_HERE) && crtHash < tableSize) {
                     crtHash++;
                     Long position = null;
                     try {
                         position = getCellPosition(crtHash);
-                    }catch (IndexOutOfBoundsException e){
+                    } catch (IndexOutOfBoundsException e) {
                         throw new IllegalStateException("Can't deal with collision");
                     }
                     raf.seek(position);
-                    cell = raf.readLine();
-                    if (cell.length() > EMPTY_CELL.length()) {
+                    checkChar = raf.readChar();
+                    if (checkChar.equals(VALUE_IS_HERE)) {
+                        raf.seek(getCellPosition(crtHash));
+                        cell = raf.readLine();
                         keyValues = parseKeyValue(cell);
                         crtKey = keyValues[0];
                         if (key.equals(crtKey)) {
@@ -136,39 +154,39 @@ public class FileHashMap {
                             raf.write(CELL_END.getBytes());
                             return true;
                         }
-                    }else{
-                        writeKeyValueInEmptyCell(crtHash,key,value);
+
+                    } else {
+                        writeKeyValueInEmptyCell(crtHash, key, value);
                         return true;
                     }
                 }
             }
-        }else{
-            writeKeyValueInEmptyCell(crtHash,key,value);
+        } else {
+            writeKeyValueInEmptyCell(crtHash, key, value);
             return true;
         }
         return false;
     }
 
     public int[] get(String key) throws Exception {
-        if(!isExist()){
+        if (!isExist()) {
             return null;
         }
         int hash = hashFunction(key);
-
         String[] resultStrings = getKeyValueByHash(hash);
-        while((resultStrings == null || !resultStrings[0].equals(key)) && hash < tableSize){
+        while ((resultStrings == null || !resultStrings[0].equals(key)) && hash < tableSize) {
             hash++;
-            if(hash < tableSize) {
+            if (hash < tableSize) {
                 resultStrings = getKeyValueByHash(hash);
-            }else{
+            } else {
                 return null;
             }
         }
-        if(resultStrings == null){
+        if (resultStrings == null) {
             return null;
         }
         int[] result = new int[resultStrings.length - 1];
-        for(int i = 0;i < result.length;i++){
+        for (int i = 0; i < result.length; i++) {
             result[i] = Integer.parseInt(resultStrings[i + 1]);
         }
         return result;
@@ -186,32 +204,33 @@ public class FileHashMap {
 
     private void writeKeyValueInEmptyCell(int hash, String key, int value) throws IOException {
         raf.seek(getCellPosition(hash));
+        raf.writeChar(VALUE_IS_HERE);
         raf.write(normalizeString(key, sizeOfKey).getBytes());
         raf.write(normalizeString(String.valueOf(value), sizeOfValue).getBytes());
         raf.seek(getCellLastPosition(hash));
         raf.write(CELL_END.getBytes());
     }
 
-    private long getCellLastPosition(int cellHash){
+    private long getCellLastPosition(int cellHash) {
         long lastPosition = getCellPosition(cellHash);
         lastPosition += this.fullCellSize - 1;
         return lastPosition;
     }
 
-    private String emptyString(int size){
-        if(size < 1){
+    private String emptyString(int size) {
+        if (size < 1) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        for(int i = 0;i < size;i++){
+        for (int i = 0; i < size; i++) {
             sb.append(FILLER);
         }
         String str = sb.toString();
         return str;
     }
 
-    private String normalizeString(String string, int normalSize){
-        if(string.length() > normalSize){
+    private String normalizeString(String string, int normalSize) {
+        if (string.length() > normalSize) {
             throw new IllegalArgumentException("string is bigger then normal size");
         }
         int spaces = normalSize - string.length();
@@ -222,18 +241,18 @@ public class FileHashMap {
     }
 
     private void writeValue(int cellHash, int valuesAlreadyThere, String value) throws IOException {
-        if(value.length() > this.sizeOfValue){
+        if (value.length() > this.sizeOfValue) {
             throw new IllegalArgumentException("value sizeOfValue is greater then it is allowed");
         }
         long cellPosition = getCellPosition(cellHash);
         long nextCellPosition = -1;
-        if(cellHash < tableSize - 1) {
+        if (cellHash < tableSize - 1) {
             nextCellPosition = getCellPosition(cellHash + 1);
-        }else{
+        } else {
             nextCellPosition = this.endPosition;
         }
-        long valuePosition = cellPosition + sizeOfKey + sizeOfValue * valuesAlreadyThere;
-        if(valuePosition + value.length() >= nextCellPosition){
+        long valuePosition = cellPosition + CHECKING_CHAR_SIZE + sizeOfKey + sizeOfValue * valuesAlreadyThere;
+        if (valuePosition + value.length() >= nextCellPosition) {
             throw new IllegalStateException("no more space for values of this key");
         }
 
@@ -241,33 +260,41 @@ public class FileHashMap {
         raf.write(normalizeString(value, sizeOfValue).getBytes());
     }
 
-    private int hashLy(String key){
+    private int hashLy(String key) {
         int hash = 0;
-        for(int i = 0; i < key.length();i++){
+        for (int i = 0; i < key.length(); i++) {
             hash = (hash * 1664525) + Character.valueOf(key.charAt(i)).hashCode() + 1013904223 + key.hashCode();
         }
         return Math.abs(hash) % tableSize;
     }
 
-    private int hashRs(String key){
+    private int hashRs(String key) {
         int b = 378551;
         int a = 63689;
         int hash = 0;
-        for(int i = 0; i < key.length();i++){
+        for (int i = 0; i < key.length(); i++) {
             hash = hash * a + Character.valueOf(key.charAt(i)).hashCode() + key.hashCode();
             a *= b;
         }
         return Math.abs(hash) % tableSize;
     }
 
-    private int hashFunction(String key){
+    private int hashFunction(String key) {
         return hashLy(key);
     }
 
     private String[] getKeyValueByHash(int cellHash) throws Exception {
-        raf.seek(getCellPosition(cellHash));
+        long position = getCellPosition(cellHash);
+        raf.seek(position);
+
+        Character checkChar = raf.readChar();
+        if (!checkChar.equals(VALUE_IS_HERE)) {
+            return null;
+        }
+
+        raf.seek(position);
         String fullCell = raf.readLine();
-        if(fullCell.length() <= EMPTY_CELL.length()){
+        if (fullCell.length() <= EMPTY_CELL.length()) {
             return null;
         }
 
@@ -278,27 +305,71 @@ public class FileHashMap {
     private String[] parseKeyValue(String cellValue) throws Exception {
         List<String> listKeyValue = new ArrayList<>();
 
-        listKeyValue.add(cellValue.substring(0, sizeOfKey).trim());
+        int space = cellValue.indexOf(" ");
 
-        for(int i = 0; i < this.numberOfValues;i++){
-            int from = sizeOfKey + i * sizeOfValue;
-            int to = from + sizeOfValue;
-            String substr = cellValue.substring(from, to);
-            substr = substr.trim();
+        String key;
+        if (space < 0) {
+            key = cellValue.substring(2, sizeOfKey).trim();
+        } else {
+            key = cellValue.substring(2, space).trim();
+            cellValue = cellValue.substring(space).trim();
+        }
+        listKeyValue.add(key);
+        for (int i = 0; i < this.numberOfValues; i++) {
+
+            space = cellValue.indexOf(" ");
+            if (space < 0) {
+                try {
+                    long testInt = Integer.parseInt(cellValue);
+                    listKeyValue.add(cellValue);
+                } catch (Exception e) {
+                    break;
+                }
+                break;
+            }
+            String substr = cellValue.substring(0, space).trim();
+            cellValue = cellValue.substring(space).trim();
             try {
-                long testLong = Integer.parseInt(substr);
-            }catch (Exception e){
+                long testInt = Integer.parseInt(substr);
+            } catch (Exception e) {
                 break;
             }
             listKeyValue.add(substr);
         }
         String[] keyValues = new String[listKeyValue.size()];
-        for(int i = 0;i < keyValues.length;i++){
+        for (int i = 0; i < keyValues.length; i++) {
             keyValues[i] = listKeyValue.get(i);
         }
         return keyValues;
     }
 
+    /*
+     private String[] parseKeyValue(String cellValue) throws Exception {
+         List<String> listKeyValue = new ArrayList<>();
+
+         String key = cellValue.substring(0, sizeOfKey).trim();
+         key = key.substring(1);
+         listKeyValue.add(key);
+
+         for (int i = 0; i < this.numberOfValues; i++) {
+             int from = sizeOfKey + i * sizeOfValue;
+             int to = from + sizeOfValue;
+             String substr = cellValue.substring(from, to);
+             substr = substr.trim();
+             try {
+                 long testLong = Integer.parseInt(substr);
+             } catch (Exception e) {
+                 break;
+             }
+             listKeyValue.add(substr);
+         }
+         String[] keyValues = new String[listKeyValue.size()];
+         for (int i = 0; i < keyValues.length; i++) {
+             keyValues[i] = listKeyValue.get(i);
+         }
+         return keyValues;
+     }
+ */
     public int getTableSize() {
         return tableSize;
     }

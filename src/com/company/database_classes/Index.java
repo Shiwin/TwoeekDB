@@ -26,7 +26,7 @@ public class Index {
                 tableAccessor.getColumnSize(columnNumber), SIZE_OF_INTEGER,this.maxCountOfRepeatedValues,true);
         if(shouldBeInit){
             writeMeta(raf, startPosition);
-            this.map.initializeEmpty();
+            //this.map.initializeEmpty();
         }
     }
 
