@@ -368,4 +368,7 @@ public class Table {
         return results;
     }
 
+    public int getNextId() {
+        return this.accessor.getNextId();
+    }
 }

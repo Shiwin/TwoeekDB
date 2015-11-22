@@ -16,7 +16,26 @@ public class TableInfo {
     private int columnsCount;                       //number of columns (not less then 1)
     private int maxNumberOfRecords;                 //max value of allowed records in future table
     private int numberOfKeyColumn;                  //number of column which will be the primary key - MUST BE DECLARED
+    private int nextId;
     //================================================================================
+
+    public TableInfo(String name, int maxNumberOfRecords, int nextId){
+        if(name == null){
+            throw new NullPointerException("name is null");
+        }
+        if(maxNumberOfRecords < 1){
+            throw new IllegalArgumentException("max number of records must be greater then 0");
+        }
+        this.name = name;
+        this.maxNumberOfRecords = maxNumberOfRecords;
+        this.columns = new ArrayList<>();
+        this.columnsSizes = new ArrayList<>();
+        this.maxCountOfRepeatedValues = new ArrayList<>();
+        this.maxCountOfUniqWordInRecordColumn = new ArrayList<>();
+        columnsCount = 0;
+        this.numberOfKeyColumn = -1;
+        this.nextId = nextId;
+    }
 
     public TableInfo(String name, int maxNumberOfRecords){
         if(name == null){
@@ -33,6 +52,7 @@ public class TableInfo {
         this.maxCountOfUniqWordInRecordColumn = new ArrayList<>();
         columnsCount = 0;
         this.numberOfKeyColumn = -1;
+        this.nextId = 0;
     }
 
     /**
@@ -160,5 +180,9 @@ public class TableInfo {
 
     public void setMaxCountOfUniqWordInRecordColumn(int columnNumber, int maxCountOfUniqWordInRecordColumn) {
         this.maxCountOfUniqWordInRecordColumn.set(columnNumber, maxCountOfUniqWordInRecordColumn);
+    }
+
+    public int getNextId() {
+        return nextId;
     }
 }
