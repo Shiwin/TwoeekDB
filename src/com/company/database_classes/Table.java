@@ -11,7 +11,6 @@ import java.util.*;
 public class Table {
 
     private static final int MIN_WORD_LENGTH = 3;
-    private static final String[] ESCAPE_WORDS = {"about"};
 
     //============================= private fields ===================================
     private TableAccess accessor;       // get access to the table according to given start/end positions in file
@@ -80,9 +79,8 @@ public class Table {
         }
     }
 
-    private char[] unsignificantChars = {'!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '=', '+', '|', ']', '}', '[', '{',
-            ':', ';', '\'', '\"', '?', '\\', '/', ',', '<', '>', '.', '`', '~'};
 
+/*
     private String[] getUniqWords(String text, int longerThen) {
         StringBuilder sb = new StringBuilder();
         sb.append(text);
@@ -117,11 +115,81 @@ public class Table {
         }
         return result;
     }
+*/
+
+    private Set<Character> unsignificantChars = new LinkedHashSet<>();
+    {unsignificantChars.add('!');unsignificantChars.add('@');unsignificantChars.add('#');unsignificantChars.add('$');
+        unsignificantChars.add('%');unsignificantChars.add('^');unsignificantChars.add('&');unsignificantChars.add('*');
+        unsignificantChars.add('(');unsignificantChars.add(')');unsignificantChars.add('=');unsignificantChars.add('+');
+        unsignificantChars.add('|');unsignificantChars.add(']');unsignificantChars.add('}');unsignificantChars.add('[');
+        unsignificantChars.add('{');unsignificantChars.add(':');unsignificantChars.add(';');unsignificantChars.add('\'');
+        unsignificantChars.add('\"');unsignificantChars.add('?');unsignificantChars.add('\\');unsignificantChars.add('/');
+        unsignificantChars.add(',');unsignificantChars.add('<');unsignificantChars.add('>');unsignificantChars.add('.');
+        unsignificantChars.add('`');unsignificantChars.add('~');unsignificantChars.add(' ');
+    }
+
+    private static final Set<String> ESCAPE_WORDS = new LinkedHashSet<>();
+    {ESCAPE_WORDS.add("about");ESCAPE_WORDS.add("above");ESCAPE_WORDS.add("across");ESCAPE_WORDS.add("after");
+        ESCAPE_WORDS.add("against");ESCAPE_WORDS.add("along");ESCAPE_WORDS.add("among");ESCAPE_WORDS.add("around");
+        ESCAPE_WORDS.add("as");ESCAPE_WORDS.add("aside");ESCAPE_WORDS.add("at");ESCAPE_WORDS.add("before");
+        ESCAPE_WORDS.add("behind");ESCAPE_WORDS.add("below");ESCAPE_WORDS.add("between");ESCAPE_WORDS.add("beside");
+        ESCAPE_WORDS.add("besides");ESCAPE_WORDS.add("beyond");ESCAPE_WORDS.add("but");ESCAPE_WORDS.add("by");
+        ESCAPE_WORDS.add("despite");ESCAPE_WORDS.add("down");
+        ESCAPE_WORDS.add("except"); ESCAPE_WORDS.add("for");ESCAPE_WORDS.add("from");ESCAPE_WORDS.add("given");
+        ESCAPE_WORDS.add("in");ESCAPE_WORDS.add("inside");ESCAPE_WORDS.add("into");ESCAPE_WORDS.add("like");
+        ESCAPE_WORDS.add("near");ESCAPE_WORDS.add("of");ESCAPE_WORDS.add("off");ESCAPE_WORDS.add("on");
+        ESCAPE_WORDS.add("opposite");ESCAPE_WORDS.add("out");ESCAPE_WORDS.add("outside");ESCAPE_WORDS.add("over");
+        ESCAPE_WORDS.add("per");ESCAPE_WORDS.add("since");ESCAPE_WORDS.add("than");ESCAPE_WORDS.add("through");
+        ESCAPE_WORDS.add("till");ESCAPE_WORDS.add("to");ESCAPE_WORDS.add("under");ESCAPE_WORDS.add("unlike");
+        ESCAPE_WORDS.add("until");ESCAPE_WORDS.add("up");ESCAPE_WORDS.add("with");ESCAPE_WORDS.add("without");
+    }
+
+
+    private Set<String> getUniqWords(String text, int longerThen){
+        text = text.trim().toLowerCase();
+        Set<String> set = new LinkedHashSet<>();
+        StringBuilder crtWord = null;
+        Character space = ' ';
+        for (int i = 0; i < text.length(); i++) {
+            char crtChar = text.charAt(i);
+
+            if(!space.equals(crtChar)) {
+                if(i == 0 || space.equals(text.charAt(i - 1))){
+                    crtWord = new StringBuilder();
+                    if(!unsignificantChars.contains(crtChar)) {
+                        crtWord.append(crtChar);
+                    }
+                }else{
+                    if(!unsignificantChars.contains(crtChar)) {
+                        crtWord.append(crtChar);
+                    }
+                }
+            }else{
+                if(!space.equals(text.charAt(i - 1))){
+                    String crt = crtWord.toString();
+                    if(crt.length() > longerThen && !ESCAPE_WORDS.contains(crt)) {
+                        set.add(crtWord.toString());
+                    }
+                }else{
+                    //nothing
+                }
+            }
+        }
+        if(crtWord.length() != 0){
+            String crt = crtWord.toString();
+            if(crt.length() > longerThen && !ESCAPE_WORDS.contains(crt)) {
+                set.add(crtWord.toString());
+            }
+        }
+        return set;
+    }
 
     private void indexingAllWordsInValue(int columnNumber, String value, int keyValue) throws Exception {
-        String[] words = getUniqWords(value, MIN_WORD_LENGTH);
-        for (int i = 0; i < words.length; i++) {
-            this.columnIndexes[columnNumber].put(words[i], keyValue);
+        Set<String> words = getUniqWords(value, MIN_WORD_LENGTH);
+        Iterator<String> iterator = words.iterator();
+        while (iterator.hasNext()){
+            String crt = iterator.next();
+            this.columnIndexes[columnNumber].put(crt, keyValue);
         }
     }
 
@@ -215,34 +283,25 @@ public class Table {
         return getRecord(recordNumbers[0]);
     }
 
-    private int[] getResultbyMultiWordIndex(int columnNumber,String value) throws Exception {
-        String[] words = getUniqWords(value,MIN_WORD_LENGTH);
-        /*
-        Set<Integer> list = new HashSet<>();
 
-        for (int i = 0; i < words.length; i++) {
-            int[] crtResult = this.columnIndexes[columnNumber].get(words[i]);
-            if(crtResult == null){
-                continue;
-            }
-            for (int j = 0; j < crtResult.length; j++) {
-                if(!list.contains(crtResult[j])){
-                    list.add(crtResult[j]);
-                }
-            }
-        }*/
+
+    private int[] getResultbyMultiWordIndex(int columnNumber,String value) throws Exception {
+        Set<String> words = getUniqWords(value, MIN_WORD_LENGTH);
         Set<Integer> list = new HashSet<>();
-        if(words == null || words.length < 1){
+        if(words == null || words.size() < 1){
             return null;
         }
-        int[] crtResult = this.columnIndexes[columnNumber].get(words[0]);
+        Iterator<String> iterator = words.iterator();
+        String crt = iterator.next();
+        int[] crtResult = this.columnIndexes[columnNumber].get(crt);
         for (int j = 0; j < crtResult.length; j++) {
             list.add(crtResult[j]);
         }
 
-        for (int i = 1; i < words.length; i++) {
+        while(iterator.hasNext()){
+            crt = iterator.next();
             Set<Integer> local = new HashSet<>();
-            crtResult = this.columnIndexes[columnNumber].get(words[i]);
+            crtResult = this.columnIndexes[columnNumber].get(crt);
             if(crtResult == null){
                 continue;
             }
@@ -254,12 +313,12 @@ public class Table {
             list = local;
         }
 
-        Iterator<Integer> iterator = list.iterator();
+        Iterator<Integer> integerIterator = list.iterator();
         int i = 0;
         int[] result = new int[list.size()];
-        while (iterator.hasNext()){
-            Integer crt = iterator.next();
-            result[i] = crt;
+        while (integerIterator.hasNext()){
+            Integer crtInt = integerIterator.next();
+            result[i] = crtInt;
             i++;
         }
         return result;

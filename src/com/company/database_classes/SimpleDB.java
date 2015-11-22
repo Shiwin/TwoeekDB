@@ -141,14 +141,14 @@ public class SimpleDB {
 
                         if (maxCountOfUniqWordInRecordColumn[j] < 1) {
                             tableAndIndexesSizes[1][crtIndex] = (long) (((PrimaryIndex.getSizeOfIntegerValue() * maxCountOfRepeatedValues[j]
-                                    + columnSizes[j] + 2) * tableInfos[i].getMaxNumberOfRecords()) * indexFactor) + 8; // 8 - size of integer = meta info
+                                    + columnSizes[j] + 2) * tableInfos[i].getMaxNumberOfRecords()) * indexFactor) + ColumnIndex.META_SIZE;
                         }else{
                             long size = (long) (((PrimaryIndex.getSizeOfIntegerValue() * maxCountOfRepeatedValues[j] + columnSizes[j] + 2) *
-                                                                maxCountOfUniqWordInRecordColumn[j] * indexFactor) + 8);
+                                                                maxCountOfUniqWordInRecordColumn[j] * indexFactor) + ColumnIndex.META_SIZE);
                             tableAndIndexesSizes[1][crtIndex] = size;
                         }
-                    } else {                                                                                         // 2 - size of checking char in HashFile
-                        tableAndIndexesSizes[1][crtIndex] = 2 + 8; // 8 - size of integer = meta info
+                    } else {                                                             // 2 - size of checking char in HashFile
+                        tableAndIndexesSizes[1][crtIndex] = 2 + ColumnIndex.META_SIZE;
                     }
                 }
             }
