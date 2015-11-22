@@ -7,23 +7,32 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class Index {
+    public static final int META_SIZE = 16;
     private static final int SIZE_OF_INTEGER = 7;       // max size of position value (in case of integer primary key)
     public static int getSizeOfIntegerValue(){
         return SIZE_OF_INTEGER;
     }
 
     protected int maxCountOfRepeatedValues;
+    protected int countOfUniqWordsInRecordColumn;
     protected FileHashMap map;    //file hashmap
 
-    Index(RandomAccessFile raf, long startPosition, long endPosition, TableAccess tableAccessor, int columnNumber, int countOfValues, boolean shouldBeInit) throws IOException {
+    Index(RandomAccessFile raf, long startPosition, long endPosition, TableAccess tableAccessor, int columnNumber, int countOfValues, int countOfUniqWordsInRecordColumn, boolean shouldBeInit) throws IOException {
         if(!shouldBeInit){
             raf.seek(startPosition);
             this.maxCountOfRepeatedValues = Integer.parseInt(raf.readLine());
+            this.countOfUniqWordsInRecordColumn = Integer.parseInt(raf.readLine());
         }else{
             this.maxCountOfRepeatedValues = countOfValues;
+            this.countOfUniqWordsInRecordColumn = countOfUniqWordsInRecordColumn;
         }
-        this.map = new FileHashMap(raf, startPosition + 8, endPosition,tableAccessor.getMaxTableSize(),  // 8 - size for meta
-                tableAccessor.getColumnSize(columnNumber), SIZE_OF_INTEGER,this.maxCountOfRepeatedValues,true);
+        if(this.countOfUniqWordsInRecordColumn < 1) {
+            this.map = new FileHashMap(raf, startPosition + META_SIZE, endPosition, tableAccessor.getMaxTableSize(),
+                    tableAccessor.getColumnSize(columnNumber), SIZE_OF_INTEGER, this.maxCountOfRepeatedValues, true);
+        }else{
+            this.map = new FileHashMap(raf, startPosition + META_SIZE, endPosition, this.countOfUniqWordsInRecordColumn,
+                    tableAccessor.getColumnSize(columnNumber), SIZE_OF_INTEGER, this.maxCountOfRepeatedValues, true);
+        }
         if(shouldBeInit){
             writeMeta(raf, startPosition);
             //this.map.initializeEmpty();
@@ -33,6 +42,8 @@ public class Index {
     private void writeMeta(RandomAccessFile raf, long startPosition) throws IOException {
         raf.seek(startPosition);
         raf.write(String.valueOf(maxCountOfRepeatedValues).getBytes());
+        raf.write("\n".getBytes());
+        raf.write(String.valueOf(countOfUniqWordsInRecordColumn).getBytes());
         raf.write("\n".getBytes());
     }
 
@@ -54,5 +65,9 @@ public class Index {
 
     public boolean isExist() throws IOException {
         return map.isExist();
+    }
+
+    public int getCountOfUniqWordsInRecordColumn() {
+        return countOfUniqWordsInRecordColumn;
     }
 }

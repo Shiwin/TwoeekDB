@@ -1,6 +1,5 @@
 package com.company.helpers;
 
-import android.util.Pair;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +12,7 @@ public class TableInfo {
     private List<String> columns;                   //names of columns
     private List<Integer> columnsSizes;             //sizes (== length) of each column
     private List<Integer> maxCountOfRepeatedValues; //necessary for creating column indexes
+    private List<Integer> maxCountOfUniqWordInRecordColumn;
     private int columnsCount;                       //number of columns (not less then 1)
     private int maxNumberOfRecords;                 //max value of allowed records in future table
     private int numberOfKeyColumn;                  //number of column which will be the primary key - MUST BE DECLARED
@@ -30,6 +30,7 @@ public class TableInfo {
         this.columns = new ArrayList<>();
         this.columnsSizes = new ArrayList<>();
         this.maxCountOfRepeatedValues = new ArrayList<>();
+        this.maxCountOfUniqWordInRecordColumn = new ArrayList<>();
         columnsCount = 0;
         this.numberOfKeyColumn = -1;
     }
@@ -52,11 +53,11 @@ public class TableInfo {
         return true;
     }
 
-    public void addColumn(String columnName, int columnSize, int maxCountOfRepeatedValues){
-        addColumn(columnName,columnSize,false,maxCountOfRepeatedValues);
+    public void addColumn(String columnName, int columnSize, int maxCountOfRepeatedValues, int maxCountOfUniqWordInRecordColumn){
+        addColumn(columnName,columnSize,false,maxCountOfRepeatedValues, maxCountOfUniqWordInRecordColumn);
     }
     public void addPrimaryColumn(String columnName, int columnSize){
-        addColumn(columnName,columnSize,true,1);
+        addColumn(columnName,columnSize,true,1, 0);
     }
 
     /**
@@ -66,7 +67,7 @@ public class TableInfo {
      * @param isPrimary if this column is primary key
      *                  ONLY ONE COLUMN CAN BE PRIMARY
      */
-    private void addColumn(String columnName, int columnSize, boolean isPrimary, int maxCountOfRepeatedValues){
+    private void addColumn(String columnName, int columnSize, boolean isPrimary, int maxCountOfRepeatedValues, int maxCountOfUniqWordInRecordColumn){
         if(columnName == null){
             throw new NullPointerException("columnName is null");
         }
@@ -76,10 +77,14 @@ public class TableInfo {
         if(numberOfKeyColumn != -1 && isPrimary){
             throw new IllegalStateException("table already has the key column");
         }
+        if(maxCountOfUniqWordInRecordColumn <  0){
+            throw new IllegalArgumentException("maxCountOfUniqWordInRecordColumn must be greater or equal then 0");
+        }
 
         this.columns.add(columnName);
         this.columnsSizes.add(columnSize + 1); // 1 - length of '\n' in the end of column
         this.maxCountOfRepeatedValues.add(maxCountOfRepeatedValues);
+        this.maxCountOfUniqWordInRecordColumn.add(maxCountOfUniqWordInRecordColumn);
 
         this.columnsCount++;
         if(isPrimary){
@@ -143,5 +148,17 @@ public class TableInfo {
             maxCountOfRepeatedValues[i] = this.maxCountOfRepeatedValues.get(i);
         }
         return maxCountOfRepeatedValues;
+    }
+
+    public int[] getMaxCountOfUniqWordInRecordColumn() {
+        int[] maxCountOfUniqWordInRecordColumn = new int[this.maxCountOfUniqWordInRecordColumn.size()];
+        for (int i = 0; i < maxCountOfUniqWordInRecordColumn.length; i++) {
+            maxCountOfUniqWordInRecordColumn[i] = this.maxCountOfUniqWordInRecordColumn.get(i);
+        }
+        return maxCountOfUniqWordInRecordColumn;
+    }
+
+    public void setMaxCountOfUniqWordInRecordColumn(int columnNumber, int maxCountOfUniqWordInRecordColumn) {
+        this.maxCountOfUniqWordInRecordColumn.set(columnNumber, maxCountOfUniqWordInRecordColumn);
     }
 }

@@ -27,7 +27,7 @@ public class PrimaryIndex extends Index {
      * @throws IOException
      */
     PrimaryIndex(RandomAccessFile raf, long startPosition, long endPosition, TableAccess tableAccessor, boolean shouldBeInit) throws IOException {
-        super(raf, startPosition, endPosition,tableAccessor, tableAccessor.getKeyColumn(), 1, shouldBeInit);
+        super(raf, startPosition, endPosition,tableAccessor, tableAccessor.getKeyColumn(), 1, 0, shouldBeInit);
     }
 
 }

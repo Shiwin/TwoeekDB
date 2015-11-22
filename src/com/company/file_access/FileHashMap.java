@@ -117,17 +117,9 @@ public class FileHashMap {
         if (checkChar.equals(VALUE_IS_HERE)) {
             raf.seek(getCellPosition(crtHash));
             String cell = raf.readLine();
-
-            if (key.equals("80020")) {
-                boolean test = false;
-            }
             String[] keyValues = parseKeyValue(cell);
             String crtKey = keyValues[0];
             if (key.equals(crtKey)) {
-
-                if(crtKey.equals("1666")){
-                    boolean test = false;
-                }
                 writeValue(crtHash, keyValues.length - 1, String.valueOf(value));
                 raf.seek(getCellLastPosition(crtHash));
                 raf.write(CELL_END.getBytes());
