@@ -127,6 +127,8 @@ public class SimpleDB {
 
         for (int i = 0; i < tableInfos.length; i++) {
             int[] maxCountOfRepeatedValues = tableInfos[i].getMaxCountOfRepeatedValues();
+            int[] maxCountOfUniqWordInRecordColumn = tableInfos[i].getMaxCountOfUniqWordInRecordColumn();
+
             int[] columnSizes = tableInfos[i].getColumnSizes();
             for (int j = 0; j < tableInfos[i].getColumnsCount(); j++) {
                 int crtIndex = getIndexNumberFromTableNumberAndColumnNumber(tableInfos, i, j);
@@ -136,9 +138,16 @@ public class SimpleDB {
                             + tableInfos[i].getKeyColumnSize() + 2) * tableInfos[i].getMaxNumberOfRecords()) * indexFactor);// 2 - size of checking char in HashFile
                 } else {
                     if (maxCountOfRepeatedValues[j] > 0) {
-                        tableAndIndexesSizes[1][crtIndex] = (long) (((PrimaryIndex.getSizeOfIntegerValue() * maxCountOfRepeatedValues[j]
-                                + columnSizes[j] + 2) * tableInfos[i].getMaxNumberOfRecords()) * indexFactor) + 8; // 8 - size of integer = meta info
-                    }else{                                                                                         // 2 - size of checking char in HashFile
+
+                        if (maxCountOfUniqWordInRecordColumn[j] < 1) {
+                            tableAndIndexesSizes[1][crtIndex] = (long) (((PrimaryIndex.getSizeOfIntegerValue() * maxCountOfRepeatedValues[j]
+                                    + columnSizes[j] + 2) * tableInfos[i].getMaxNumberOfRecords()) * indexFactor) + 8; // 8 - size of integer = meta info
+                        }else{
+                            long size = (long) (((PrimaryIndex.getSizeOfIntegerValue() * maxCountOfRepeatedValues[j] + columnSizes[j] + 2) *
+                                                                maxCountOfUniqWordInRecordColumn[j] * indexFactor) + 8);
+                            tableAndIndexesSizes[1][crtIndex] = size;
+                        }
+                    } else {                                                                                         // 2 - size of checking char in HashFile
                         tableAndIndexesSizes[1][crtIndex] = 2 + 8; // 8 - size of integer = meta info
                     }
                 }
@@ -225,6 +234,7 @@ public class SimpleDB {
             throw new NullPointerException("records is null");
         }
 
+        int tableNumber = tableNames.get(tableName);
         Table table = getTable(tableName);
         if (table == null) {
             dbLogger.message("Can't find table with name " + tableName);
@@ -238,7 +248,7 @@ public class SimpleDB {
             }
 
             try {
-                table.addRecord(crtRecord);
+                table.addRecord(crtRecord, this.tableInfos[tableNumber].getMaxCountOfUniqWordInRecordColumn());
             } catch (Exception e) {
                 dbLogger.message("Table " + tableName + ", can't add record: " + e.getMessage());
             }
@@ -383,13 +393,14 @@ public class SimpleDB {
         try {
             TableAccess accessor = TableAccess.createTableAccess(raf, startEnd[0], startEnd[1], tableName, colNames, colSizes, keyColumn);
 
+            int[] maxCountOfUniqWordInRecordColumn = tableInfos[tableNumber].getMaxCountOfUniqWordInRecordColumn();
             for (int i = 0; i < maxCountOfRepeatedValues.length; i++) {
                 long[] indexStartEnd = structure.getIndexStartEnd(getIndexNumberFromTableNumberAndColumnNumber(allInfos, tableNumber, i));
                 if (i == accessor.getKeyColumn()) {
                     PrimaryIndex keyIndex = new PrimaryIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor, true);
                 } else {
-                    ColumnIndex columnIndex = new ColumnIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor,
-                            i, maxCountOfRepeatedValues[i], true);
+                        ColumnIndex columnIndex = new ColumnIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor,
+                                i, maxCountOfRepeatedValues[i], maxCountOfUniqWordInRecordColumn[i], true);
                 }
             }
         } catch (IOException e) {
@@ -412,8 +423,23 @@ public class SimpleDB {
                 if (accessor.getKeyColumn() == j) {
                     this.tableInfos[i].addPrimaryColumn(accessor.getColumnName(j), accessor.getColumnSize(j));
                 } else {
-                    this.tableInfos[i].addColumn(accessor.getColumnName(j), accessor.getColumnSize(j), 0);
+                    this.tableInfos[i].addColumn(accessor.getColumnName(j), accessor.getColumnSize(j), 0, 0);
                 }
+            }
+        }
+        for (int i = 0; i < tableInfos.length; i++) {
+            long[] startEnd = structure.getTableStartEnd(i);
+            TableAccess accessor = new TableAccess(raf, startEnd[0], startEnd[1]);
+            int[] maxCountOfRepeatedValues = tableInfos[i].getMaxCountOfRepeatedValues();
+            for (int j = 0; j < tableInfos[i].getColumnsCount(); j++) {
+                long[] indexStartEnd = structure.getIndexStartEnd(getIndexNumberFromTableNumberAndColumnNumber(this.tableInfos, i, j));
+                if(tableInfos[i].getKeyColumnNumber() == j){
+                    continue;
+                }
+                ColumnIndex columnIndex = new ColumnIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor,
+                        j, 0, 0, false);
+                int countOfUniqWordsInRecordColumn = columnIndex.getCountOfUniqWordsInRecordColumn();
+                this.tableInfos[i].setMaxCountOfUniqWordInRecordColumn(j, countOfUniqWordsInRecordColumn);
             }
         }
     }
@@ -467,6 +493,7 @@ public class SimpleDB {
 
             PrimaryIndex primaryIndex = null;
             ColumnIndex[] columnIndexes = new ColumnIndex[accessor.getCountOfColumns()];
+            int[] maxCountOfUniqWordInRecordColumn = this.tableInfos[tableNumber].getMaxCountOfUniqWordInRecordColumn();
             for (int i = 0; i < accessor.getCountOfColumns(); i++) {
                 long[] indexStartEnd = structure.getIndexStartEnd(
                         getIndexNumberFromTableNumberAndColumnNumber(this.tableInfos, tableNumber, i));
@@ -474,7 +501,8 @@ public class SimpleDB {
                     primaryIndex = new PrimaryIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor, false);
                     columnIndexes[i] = null;
                 } else {
-                    columnIndexes[i] = new ColumnIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor, i, 0, false);
+                    columnIndexes[i] = new ColumnIndex(raf, indexStartEnd[0], indexStartEnd[1], accessor, i,
+                            0, maxCountOfUniqWordInRecordColumn[i], false);
                     if (!columnIndexes[i].isExist()) {
                         columnIndexes[i] = null;
                     }

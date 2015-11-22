@@ -3,14 +3,15 @@ package com.company.database_classes;
 import com.company.file_access.TableAccess;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Class-interface for working with table inside the database
  */
 public class Table {
+
+    private static final int MIN_WORD_LENGTH = 3;
+    private static final String[] ESCAPE_WORDS = {"about"};
 
     //============================= private fields ===================================
     private TableAccess accessor;       // get access to the table according to given start/end positions in file
@@ -45,7 +46,7 @@ public class Table {
      * @param values
      * @throws Exception
      */
-    public void addRecord(String[] values) throws Exception {
+    public void addRecord(String[] values, int[] multiWordIndex) throws Exception {
         /**
          * checks if this key already in the table
          * BUT makes addition slowly
@@ -65,13 +66,62 @@ public class Table {
         if (columnIndexes != null) {
             for (int i = 0; i < columnIndexes.length; i++) {
                 if (this.columnIndexes[i] != null) {
-                    this.columnIndexes[i].put(values[i], nextNumber);
+                    if (multiWordIndex[i] > 0) {
+                        indexingAllWordsInValue(i, values[i], nextNumber);
+                    } else {
+                        this.columnIndexes[i].put(values[i], nextNumber);
+                    }
                 }
             }
         }
         int number = this.accessor.addRecord(values);
         if (nextNumber != number) {
             throw new Exception("Next number and previous size are different.");
+        }
+    }
+
+    private char[] unsignificantChars = {'!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '=', '+', '|', ']', '}', '[', '{',
+            ':', ';', '\'', '\"', '?', '\\', '/', ',', '<', '>', '.', '`', '~'};
+
+    private String[] getUniqWords(String text, int longerThen) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(text);
+        for (int i = 0; i < unsignificantChars.length; i++) {
+            int del = sb.indexOf(String.valueOf(unsignificantChars[i]));
+            while (del > -1) {
+                sb.delete(del, del + 1);
+                del = sb.indexOf(String.valueOf(unsignificantChars[i]));
+            }
+        }
+        int del = sb.indexOf("  ");
+        while (del > -1) {
+            sb.replace(del, del + 2, " ");
+            del = sb.indexOf("  ");
+        }
+        String[] result = sb.toString().split(" ");
+        Set<String> list = new HashSet<>();
+        for (int i = 0; i < result.length; i++) {
+            if (result[i].length() > longerThen) {
+                if (!list.contains(result[i]) && !Arrays.asList(ESCAPE_WORDS).contains(result[i])) {
+                    list.add(result[i]);
+                }
+            }
+        }
+        Iterator<String> iterator = list.iterator();
+        result = new String[list.size()];
+        int i = 0;
+        while (iterator.hasNext()) {
+            String crtSting = iterator.next();
+            result[i] = crtSting.toLowerCase();
+            i++;
+        }
+        return result;
+    }
+
+    private void indexingAllWordsInValue(int columnNumber, String value, int keyValue) throws Exception {
+        String[] words = getUniqWords(value, MIN_WORD_LENGTH);
+        for (int i = 0; i < words.length; i++) {
+            this.columnIndexes[columnNumber].put(words[i], keyValue);
         }
     }
 
@@ -165,11 +215,68 @@ public class Table {
         return getRecord(recordNumbers[0]);
     }
 
+    private int[] getResultbyMultiWordIndex(int columnNumber,String value) throws Exception {
+        String[] words = getUniqWords(value,MIN_WORD_LENGTH);
+        /*
+        Set<Integer> list = new HashSet<>();
+
+        for (int i = 0; i < words.length; i++) {
+            int[] crtResult = this.columnIndexes[columnNumber].get(words[i]);
+            if(crtResult == null){
+                continue;
+            }
+            for (int j = 0; j < crtResult.length; j++) {
+                if(!list.contains(crtResult[j])){
+                    list.add(crtResult[j]);
+                }
+            }
+        }*/
+        Set<Integer> list = new HashSet<>();
+        if(words == null || words.length < 1){
+            return null;
+        }
+        int[] crtResult = this.columnIndexes[columnNumber].get(words[0]);
+        for (int j = 0; j < crtResult.length; j++) {
+            list.add(crtResult[j]);
+        }
+
+        for (int i = 1; i < words.length; i++) {
+            Set<Integer> local = new HashSet<>();
+            crtResult = this.columnIndexes[columnNumber].get(words[i]);
+            if(crtResult == null){
+                continue;
+            }
+            for (int j = 0; j < crtResult.length; j++) {
+                if(list.contains(crtResult[j])){
+                    local.add(crtResult[j]);
+                }
+            }
+            list = local;
+        }
+
+        Iterator<Integer> iterator = list.iterator();
+        int i = 0;
+        int[] result = new int[list.size()];
+        while (iterator.hasNext()){
+            Integer crt = iterator.next();
+            result[i] = crt;
+            i++;
+        }
+        return result;
+    }
+
     private List<String[]> searchRecordByIndex(int colNumber, String value) throws Exception {
         if (this.columnIndexes == null) {
             throw new IllegalStateException("Can't use searching by index for non-indexed column");
         }
-        int[] recordNumbers = this.columnIndexes[colNumber].get(value);
+
+        int[] recordNumbers = null;
+        if (this.columnIndexes[colNumber].getCountOfUniqWordsInRecordColumn() > 0) {
+            recordNumbers = getResultbyMultiWordIndex(colNumber, value);
+
+        } else {
+            recordNumbers = this.columnIndexes[colNumber].get(value);
+        }
         List<String[]> results = new ArrayList<>();
         if (recordNumbers == null) {
             return results;
